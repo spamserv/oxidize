@@ -74,7 +74,7 @@ pub mod blockchain {
 
             let mut nonce = BLOCKCHAIN_INITIAL_NONCE;
 
-            let blockchain_initial_hash = "0".repeat(3);
+            let blockchain_initial_hash = "0".repeat(6);
             let mut hash_result = String::new();
             
             while !hash_result.starts_with(&blockchain_initial_hash){
