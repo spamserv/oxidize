@@ -19,9 +19,15 @@ A detailed checklist to track the progress of building out your blockchain proje
 - [ ] Create a mining function to solve nonce for PoW.
 - [ ] Develop a staking mechanism for PoS, if chosen.
 
-#### 2. Transaction Validation
+#### 2.1. Transaction Flexibility
+- [ ] Define Transaction and its usage
+- [ ] Decide on block size, based on the usage of blockchain
+- [ ] Decide if block will be flexible in size (changeable) or fixed
+
+#### 2.2. Transaction Validation
 - [ ] Implement transaction validation (e.g., check inputs vs. outputs).
 - [ ] Add digital signatures for transactions to ensure authenticity.
+- [ ] Implement which transaction go into block, and which don't based on transaction fee
 
 #### 3. Networking and Node Communication
 - [ ] Build a peer-to-peer (P2P) network for node communication.
