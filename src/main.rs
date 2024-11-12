@@ -14,7 +14,7 @@ fn main() {
     wallet2.create_new_address();
     wallet2.create_new_address();
 
-    dbg!({}, node);
-    dbg!({}, wallet1);
-    dbg!({}, wallet2);
+    dbg!(node);
+    dbg!(wallet1);
+    dbg!(wallet2);
 }
