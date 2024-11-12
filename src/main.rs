@@ -2,7 +2,7 @@ use blockchain::blockchain::Blockchain;
 
 fn main() {
     println!("Hello, world!");
-    let node = Blockchain::build();
-
+    let mut node = Blockchain::build();
+    node.add_block();
     dbg!({}, node);
 }

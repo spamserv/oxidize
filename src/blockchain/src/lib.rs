@@ -7,7 +7,6 @@ pub mod blockchain {
 
     #[derive(Debug)]
     pub struct Blockchain {
-        pub blockchain_difficulty: String,
         blocks: Vec<Block>
     }
 
@@ -28,7 +27,7 @@ pub mod blockchain {
 
     #[derive(Debug)]
     struct BlockBody {
-        transactions: Vec<BlockTransaction>
+        transactions: Vec<Option<BlockTransaction>>
     }
 
     #[derive(Debug)]
@@ -47,50 +46,48 @@ pub mod blockchain {
 
     impl Blockchain {
         pub fn build() -> Self {
-            let blockchain_difficulty= "0".repeat(BLOCKCHAIN_INITIAL_DIFFICULTY as usize);
-            let genesis_block = Block::new(&blockchain_difficulty, "".to_string());
+            let genesis_block = Block::create_genesis_block();
             let blocks = vec![genesis_block];
             return Self {
-                blockchain_difficulty,
                 blocks
             }
         }
 
-        pub fn blockchain_difficulty(&self) -> &String {
-            &self.blockchain_difficulty
+        pub fn add_block(&mut self){
+            let last_block_header = &self.blocks.last().unwrap().header;
+            let new_block = Block::new(&last_block_header.current_hash, &vec![], last_block_header.difficulty);
+            self.blocks.push(new_block);
         }
 
     }
 
     impl Block {
-        fn new(blockchain_difficulty: &String, stuff: String) -> Self {
-            if stuff.is_empty() {
-                let genesis_block = Block::create_genesis_block(&blockchain_difficulty);
+        fn new(previous_hash: &String, transactions: &Vec<BlockTransaction>, blockchain_difficulty: u8) -> Self {
+            if transactions.is_empty() {
+                let genesis_block = Block::create_data_block(previous_hash, transactions, blockchain_difficulty);
                 genesis_block
             } else {
-                let genesis_block = Block::create_genesis_block(&blockchain_difficulty);
+                let genesis_block = Block::create_data_block(previous_hash, transactions, blockchain_difficulty);
                 genesis_block
             }
-
         }
 
-        fn create_genesis_block(blockchain_difficulty: &String) -> Self {
+        pub fn create_genesis_block() -> Self {
             let previous_hash = "0".repeat(64);
             let timestamp = Utc::now().to_rfc3339();
             let transactions = Vec::new();
-
             let mut nonce = BLOCKCHAIN_INITIAL_NONCE;
-
             let mut hash_result = String::new();
+            let blockchain_difficulty_str = "0".repeat(BLOCKCHAIN_INITIAL_DIFFICULTY as usize);
             
-            while !hash_result.starts_with(blockchain_difficulty){
-                hash_result = Block::generate_hash(&previous_hash, blockchain_difficulty, &timestamp, &transactions, nonce + 1);
+            
+            while !hash_result.starts_with(&blockchain_difficulty_str){
+                hash_result = Block::generate_hash(&previous_hash, BLOCKCHAIN_INITIAL_DIFFICULTY, &timestamp, &transactions, nonce + 1);
                 nonce += 1
             }
-            
 
             let header = BlockHeader {
-                previous_hash: blockchain_difficulty.to_string(),
+                previous_hash: previous_hash.to_string(),
                 difficulty: BLOCKCHAIN_INITIAL_DIFFICULTY,
                 nonce,
                 timestamp: Utc::now().to_rfc3339(),
@@ -107,7 +104,36 @@ pub mod blockchain {
             }
         }
 
-        fn generate_hash(previous_hash: &String, difficulty: &String, timestamp: &String, transactions: &Vec<BlockTransaction>, nonce: u64) -> String {
+        pub fn create_data_block(previous_hash: &String, transactions: &Vec<BlockTransaction>, blockchain_difficulty: u8) -> Self {
+            let timestamp = Utc::now().to_rfc3339();
+            let mut nonce = BLOCKCHAIN_INITIAL_NONCE;
+            let mut hash_result = String::new();
+            let blockchain_difficulty_str = "0".repeat(blockchain_difficulty as usize);
+            
+            while !hash_result.starts_with(&blockchain_difficulty_str){
+                hash_result = Block::generate_hash(&previous_hash, blockchain_difficulty, &timestamp, &transactions, nonce + 1);
+                nonce += 1
+            }
+
+            let header = BlockHeader {
+                previous_hash: previous_hash.to_string(),
+                difficulty: BLOCKCHAIN_INITIAL_DIFFICULTY,
+                nonce,
+                timestamp: Utc::now().to_rfc3339(),
+                current_hash: hash_result
+            };
+
+            let body = BlockBody {
+                transactions: Vec::new()
+            };
+
+            Self {
+                header,
+                body
+            }
+        }
+
+        fn generate_hash(previous_hash: &String, difficulty: u8, timestamp: &String, transactions: &Vec<BlockTransaction>, nonce: u64) -> String {
                 let combined_string = format!("{}{}{}{:?}{}", previous_hash, &difficulty, timestamp, transactions, nonce);
                 let mut hasher = Sha256::new();
                 hasher.update(combined_string);
