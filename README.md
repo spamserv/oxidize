@@ -29,6 +29,10 @@ A detailed checklist to track the progress of building out your blockchain proje
 - [ ] Add digital signatures for transactions to ensure authenticity.
 - [ ] Implement which transaction go into block, and which don't based on transaction fee
 
+#### 3. Wallets
+- [x] Implement Wallet & Address creation
+- [ ] Implement send of value functionality
+
 #### 3. Networking and Node Communication
 - [ ] Build a peer-to-peer (P2P) network for node communication.
 - [ ] Implement block and transaction propagation among nodes.
