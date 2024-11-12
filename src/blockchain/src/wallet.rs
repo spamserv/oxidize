@@ -1,5 +1,4 @@
-use std::{fs::File, io::{self, BufRead, BufReader}};
-use hdwallet::{ExtendedPrivKey, ExtendedPubKey};
+use hdwallet::{secp256k1::{PublicKey}, ExtendedPrivKey, ExtendedPubKey};
 use sha2::{Digest, Sha256};
 use chrono::Utc;
 use bip39::{Mnemonic, Language};
@@ -11,7 +10,7 @@ pub struct Wallet {
     name: String,
     created_at: String,
     addresses: Vec<Address>,
-    public_key: ExtendedPubKey // Used for testing, idea is not to store it in the future
+    public_key: PublicKey // Used for testing, idea is not to store it in the future
 }
 
 #[derive(Debug)]
@@ -56,7 +55,7 @@ impl Wallet {
     //     Ok(words)
     // }
 
-    fn generate_public_key() -> Result<ExtendedPubKey, String> {
+    fn generate_public_key() -> Result<PublicKey, String> {
         // Generate a mnemonic and seed
         let mut rng = bip39::rand::thread_rng();
         let mnemonic = Mnemonic::generate_in_with(&mut rng, Language::English, 24).unwrap();
@@ -77,7 +76,7 @@ impl Wallet {
             println!("{}", mnemonic);
     
             // Return the derived public key
-            return Ok(child_pub_key);
+            return Ok(child_pub_key.public_key);
         }
     
         // If the master key creation failed, return an error
