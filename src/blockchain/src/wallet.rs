@@ -5,6 +5,7 @@ use chrono::Utc;
 use bip39::{Mnemonic, Language};
 
 use crate::blockchain::BlockTransaction;
+#[derive(Debug)]
 pub struct Wallet {
     id: String, // Derived from public key
     name: String,
@@ -13,6 +14,7 @@ pub struct Wallet {
     public_key: ExtendedPubKey // Used for testing, idea is not to store it in the future
 }
 
+#[derive(Debug)]
 pub struct Address {
     address: String,
     created_at: String,
@@ -32,6 +34,11 @@ impl Wallet {
             addresses,
             name,
         }
+    }
+
+    pub fn create_new_address(&mut self) {
+        let address = Address::new();
+        self.addresses.push(address);
     }
 
     // fn open_mnemonic_file() -> io::Result<Vec<String>> {
