@@ -160,7 +160,7 @@ impl Block {
         };
 
         let body = BlockBody {
-            transactions: Vec::new()
+            transactions
         };
 
         Self {
@@ -173,6 +173,7 @@ impl Block {
         let timestamp = Utc::now().to_rfc3339();
         let mut nonce = BLOCKCHAIN_INITIAL_NONCE;
         let mut hash_result = String::new();
+        let transactions = Vec::new();
         let blockchain_difficulty_str = "0".repeat(blockchain_difficulty as usize);
         
         while !hash_result.starts_with(&blockchain_difficulty_str){
@@ -182,14 +183,14 @@ impl Block {
 
         let header = BlockHeader {
             previous_hash: previous_hash.to_string(),
-            difficulty: BLOCKCHAIN_INITIAL_DIFFICULTY,
+            difficulty: blockchain_difficulty,
             nonce,
             timestamp: Utc::now().to_rfc3339(),
             current_hash: hash_result
         };
 
         let body = BlockBody {
-            transactions: Vec::new()
+            transactions
         };
 
         Self {
