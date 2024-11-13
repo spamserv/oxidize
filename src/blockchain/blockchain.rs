@@ -8,18 +8,18 @@ use crate::helpers::HashHelper;
 // Consts
 const BLOCKCHAIN_INITIAL_DIFFICULTY: u8 = 4;
 const BLOCKCHAIN_INITIAL_NONCE: u64 = 0;
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Blockchain {
     blocks: Vec<Block>
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Block {
     header: BlockHeader,
     body: BlockBody
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BlockHeader {
     timestamp: String,
     previous_hash: String,
@@ -28,20 +28,27 @@ pub struct BlockHeader {
     difficulty: u8,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BlockBody {
     transactions: Vec<BlockTransaction>
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BlockTransaction {
     inputs: String,
     outputs: String,
     metadata: TransactionMetadata,
 }
 
+#[derive(Debug, Clone)]
+struct TransactionMetadata {
+    sender: String,
+    receiver: String,
+    value: String
+}
+
 #[derive(Error, Debug)]
-enum BlockValidationError {
+pub enum BlockValidationError {
     #[error("Block not found with the specified hash")]
     BlockNotFound,
     #[error("Blockchain must have at least 2 blocks")]
@@ -54,13 +61,6 @@ enum BlockValidationError {
     PreviousHashMismatch,
     #[error("Block timestamp must be greater than previous block")]
     InvalidTimestamp,
-}
-
-#[derive(Debug)]
-struct TransactionMetadata {
-    sender: String,
-    receiver: String,
-    value: String
 }
 
 impl Blockchain {
@@ -107,6 +107,10 @@ impl Blockchain {
 
         Ok(block)
 
+    }
+
+    pub fn blocks(&self) -> Vec<Block> {
+        self.blocks.clone()
     }
 
 
