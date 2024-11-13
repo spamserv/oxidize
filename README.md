@@ -6,13 +6,15 @@ An attempt to implement simple blockchain using Rust, while learning Rust.
 
 A detailed checklist to track the progress of building out your blockchain project.
 
-### ✅ Completed Steps
+### ✅ Completed Milestones
 - [x] Implement blockchain structure with vector of blocks.
 - [x] Add block header (timestamp, previous_hash, current_hash, nonce, difficulty).
 - [x] Create block body with transactions (inputs, outputs, metadata).
 - [x] Generate the genesis block.
 
 ### 🛠️ Next Steps
+
+Here is the current state of the blockchain:
 
 #### 1. Consensus Mechanism
 - [ ] Implement a basic consensus algorithm (e.g., Proof of Work or Proof of Stake).
@@ -39,7 +41,10 @@ A detailed checklist to track the progress of building out your blockchain proje
 - [ ] Develop synchronization for consistent blockchain copies across nodes.
 
 #### 4. Block Verification
-- [ ] Create a function to verify block integrity (hash, timestamp, difficulty).
+- [x] Create a function to verify block integrity (hash, timestamp, difficulty).
+- [x] Verify single block validity.
+- [ ] Verify validity of part of the chain.
+- [ ] Verify validity of part of the full chain.
 - [ ] Implement block validation rules for consensus enforcement.
 
 #### 5. Blockchain State Management
@@ -67,8 +72,60 @@ A detailed checklist to track the progress of building out your blockchain proje
 - [ ] Introduce smart contract functionality for extended capabilities.
 - [ ] Research scalability solutions (e.g., sharding, layer-2 technologies).
 
-### Project Structure
+## Oxidize - Project Explanation
 
-TBD, so far so good. Probably ton of refactoring coming in place.
+This is a Rust-based blockchain aimed at learning purposes. I created it based on different resources and techniques and I used what I thought is correct and interesting.
+
+Down is the explanation of each section of a blockchain.
+
+## Oxidize structure
+
+### Blockchain (Node)
+
+### Wallet
+
+### Address
+
+### Helpers
+
+## Oxidize Features
+
+#### 1. Consensus Mechanism
+
+#### 2.1. Transaction Flexibility
+
+#### 2.2. Transaction Validation
+
+#### 3. Wallets
+
+#### 3. Networking and Node Communication
+
+#### 4. Block Verification
+
+#### 5. Blockchain State Management
+
+#### 6. Merkle Tree Structure
+
+#### 7. User Interface (Optional)
+
+#### 8. Security Features
+
+#### 9. Logging and Monitoring
+
+#### 10. Advanced Features
+
+## Mods / Crates
+
+### blockchain
+Consists of blockchain, wallet, address.
+
+### helpers
+Has helper functions
+
+## Tests
+At one point, you should be able to run tests per crate. TBD
+
+
+So far so good. Probably ton of refactoring coming in place.
 
 ---
