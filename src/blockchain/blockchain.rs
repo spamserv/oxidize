@@ -80,7 +80,7 @@ impl Blockchain {
         self.blocks.push(new_block);
     }
 
-    pub fn validate_single_block(&mut self, hash: &String) -> Result<&Block, BlockValidationError> {
+    pub fn validate_single_block(&mut self, hash: &String) -> Result<(), BlockValidationError> {
         let block= self.blocks
             .iter()
             .find(|b| b.header.current_hash == *hash)
@@ -107,8 +107,36 @@ impl Blockchain {
             return Err(BlockValidationError::InvalidTimestamp)
         }
 
-        Ok(block)
+        Ok(())
 
+    }
+
+    pub fn validate_full_chain(&mut self) -> Result<(), BlockValidationError> {
+        for (idx, block) in self.blocks.iter().enumerate() {
+            if self.blocks.len() <= 1 {
+                return Err(BlockValidationError::InsufficientBlocks)
+            }
+    
+            if !HashHelper::is_valid_hash(&block) {
+                return Err(BlockValidationError::InvalidHash)
+            }
+            
+            if idx != 0 {
+                let prev_block = self.blocks
+                .iter()
+                .find(|b| b.header.current_hash == block.header.previous_hash)
+                .ok_or(BlockValidationError::PreviousBlockNotFound)?;
+
+                if prev_block.header.current_hash != block.header.previous_hash {
+                    return Err(BlockValidationError::PreviousHashMismatch)
+                }
+
+                if block.header.timestamp <= prev_block.header.timestamp {
+                    return Err(BlockValidationError::InvalidTimestamp)
+                }
+            }
+        }
+        Ok(())
     }
 
     pub fn blocks(&self) -> Vec<Block> {

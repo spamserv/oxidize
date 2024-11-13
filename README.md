@@ -4,7 +4,7 @@ An attempt to implement simple blockchain using Rust, while learning Rust.
 
 ## Blockchain Project Development Roadmap
 
-A detailed checklist to track the progress of building out your blockchain project.
+A detailed checklist to track the progress:.
 
 ### ✅ Completed Milestones
 - [x] Implement blockchain structure with vector of blocks.

@@ -22,6 +22,11 @@ fn main() {
         Ok(_) => println!("{}", "Block validated".bold().green())
     }
 
+    match node.validate_full_chain() {
+        Err(e) => println!("Error validating full chain with error {}", e),
+        Ok(_) => println!("{}", "Full chain validated".bold().green())
+    }
+
     println!("{}", "Creating 2 wallets".bold());
     let mut wallet1 = Wallet::new("Wallet#1".to_string());
     wallet1.create_new_address();
