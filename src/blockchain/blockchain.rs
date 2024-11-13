@@ -28,8 +28,8 @@ pub struct BlockHeader {
 }
 
 #[derive(Debug)]
-struct BlockBody {
-    transactions: Vec<Option<BlockTransaction>>
+pub struct BlockBody {
+    transactions: Vec<BlockTransaction>
 }
 
 #[derive(Debug)]
@@ -87,7 +87,7 @@ impl Blockchain {
             return Err(BlockValidationError::InsufficientBlocks)
         }
 
-        if !HashHelper::is_valid_hash(&mut block) {
+        if !HashHelper::is_valid_hash(&block) {
             return Err(BlockValidationError::InvalidHash)
         }
 
@@ -120,6 +120,14 @@ impl Block {
             let genesis_block = Block::create_data_block(previous_hash, transactions, blockchain_difficulty);
             genesis_block
         }
+    }
+
+    pub fn header(&self) -> &BlockHeader {
+        &self.header
+    }
+
+    pub fn body(&self) -> &BlockBody {
+        &self.body
     }
 
     pub fn create_genesis_block() -> Self {
@@ -182,16 +190,34 @@ impl Block {
             body
         }
     }
+}
 
-    // fn generate_hash(previous_hash: &String, difficulty: u8, timestamp: &String, transactions: &Vec<BlockTransaction>, nonce: u64) -> String {
-    //         let combined_string = format!("{}{}{}{:?}{}", previous_hash, &difficulty, timestamp, transactions, nonce);
-    //         let mut hasher = Sha256::new();
-    //         hasher.update(combined_string);
-    //         let hash_result = hasher.finalize();
-    //         let hash_result = format!("{:x}", hash_result);
-    //         hash_result
-    // }
-    
+impl BlockHeader {
+    pub fn current_hash(&self) -> &String {
+        &self.current_hash
+    }
+
+    pub fn previous_hash(&self) -> &String {
+        &self.previous_hash
+    }
+
+    pub fn difficulty(&self) -> u8 {
+        self.difficulty
+    }
+
+    pub fn timestamp(&self) -> &String {
+        &self.timestamp
+    }
+
+    pub fn nonce(&self) -> u64 {
+        self.nonce
+    }
+}
+
+impl BlockBody {
+    pub fn transactions(&self) -> &Vec<BlockTransaction> {
+        &self.transactions
+    }
 }
 
 #[cfg(test)]

@@ -1,4 +1,6 @@
-use crate::blockchain::Block;
+use sha2::{Digest, Sha256};
+
+use crate::blockchain::{Block, BlockTransaction};
 
 pub struct HashHelper;
 
@@ -12,9 +14,9 @@ impl HashHelper {
         hash_result
     }
 
-    pub fn is_valid_hash(block: &Block) {
-        let hash = Self::generate_hash(block.previous_hash, block.blockchain_difficulty, block.timestamp, block.transactions, block.nonce);
-        hash == block.header.current_hash;
+    pub fn is_valid_hash(block: &Block) -> bool{
+        let hash = Self::generate_hash(block.header().previous_hash(), block.header().difficulty(), block.header().timestamp(), block.body().transactions(), block.header().nonce());
+        &hash == block.header().current_hash()
     }
 }
 
