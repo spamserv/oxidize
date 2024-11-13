@@ -102,6 +102,38 @@ Down is the explanation of each section of a blockchain.
 
 #### 4. Block Verification
 
+1. **Single Block Verification**: 
+Block is a fundamental part of the blockchain. Its main purpose is to carry and store transactions. Blockchains building blocks are actually - blocks. Each block has a header and body. In order to verify a block, there are several checks implemented, which can be found in the `enum BlockValidationError`:
+
+```
+enum BlockValidationError {
+    #[error("Block not found with the specified hash")]
+    BlockNotFound,
+    #[error("Blockchain must have at least 2 blocks")]
+    InsufficientBlocks,
+    #[error("Invalid block hash format or value")]
+    InvalidHash,
+    #[error("Previous block not found in chain")]
+    PreviousBlockNotFound,
+    #[error("Previous hash mismatch")]
+    PreviousHashMismatch,
+    #[error("Block timestamp must be greater than previous block")]
+    InvalidTimestamp,
+}
+```
+
+2. **Part & Full Chain Validity**: 
+There should be an option, other than to check a single disparity, to check both:
+ - the full chain validity
+ - validity on a certain range.
+
+3. **Validation rules for consensus enforcement**:
+Beyond cryptographic integrity, there should be a consenus mechanism to check for:
+  - valid transactions - each transaction in the block must adhere to certain rules
+  - PoW/Stake validation - at the moment, there is only a simple PoW mechanism with simple block difficulty for local development.
+  - block creation rules - mechanism to understand who and when can create blocks and what types of transaction to include
+  - network rules - enforce particuolar network structure with *block size limit* and *transaciton format*
+
 #### 5. Blockchain State Management
 
 #### 6. Merkle Tree Structure
