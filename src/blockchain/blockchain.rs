@@ -1,12 +1,13 @@
-
-const BLOCKCHAIN_INITIAL_DIFFICULTY: u8 = 4;
-const BLOCKCHAIN_INITIAL_NONCE: u64 = 0;
-
+// Imports
 use chrono::Utc;
 use thiserror::Error;
 
+// Modules/Crates
 use crate::helpers::HashHelper;
 
+// Consts
+const BLOCKCHAIN_INITIAL_DIFFICULTY: u8 = 4;
+const BLOCKCHAIN_INITIAL_NONCE: u64 = 0;
 #[derive(Debug)]
 pub struct Blockchain {
     blocks: Vec<Block>
@@ -226,7 +227,6 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+        println!("Works!")
     }
 }

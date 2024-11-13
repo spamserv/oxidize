@@ -1,2 +1,2 @@
-pub mod blockchain;
-pub mod helpers;
+mod blockchain;
+mod helpers;

@@ -1,6 +1,6 @@
-pub mod blockchain;
-pub mod address;
-pub mod wallet;
+mod blockchain;
+mod address;
+mod wallet;
 
 pub use blockchain::*;
 pub use address::*;

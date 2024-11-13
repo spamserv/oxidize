@@ -1,4 +1,5 @@
 mod blockchain;
+mod helpers;
 
 use blockchain::*;
 

@@ -1,2 +1,2 @@
 mod helpers;
-pub use helpers::HashHelper;
+pub use helpers::*;
