@@ -15,7 +15,6 @@ impl HashHelper {
     }
 
     pub fn is_valid_hash(block: &Block) -> bool{
-        dbg!(block.header().previous_hash(), block.header().difficulty(), block.header().timestamp(), block.body().transactions(), block.header().nonce());
         let hash = Self::generate_hash(block.header().previous_hash(), block.header().difficulty(), block.header().timestamp(), block.body().transactions(), block.header().nonce());
         &hash == block.header().current_hash()
     }

@@ -99,7 +99,7 @@ impl Blockchain {
             .find(|b| b.header.current_hash == block.header.previous_hash)
             .ok_or(BlockValidationError::PreviousBlockNotFound)?;
         
-        if prev_block.header.current_hash == block.header.previous_hash {
+        if prev_block.header.current_hash != block.header.previous_hash {
             return Err(BlockValidationError::PreviousHashMismatch)
         }
 
