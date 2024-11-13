@@ -143,9 +143,11 @@ impl Block {
         let mut hash_result = String::new();
         let blockchain_difficulty_str = "0".repeat(BLOCKCHAIN_INITIAL_DIFFICULTY as usize);
         
-        
-        while !hash_result.starts_with(&blockchain_difficulty_str){
+        loop {
             hash_result = HashHelper::generate_hash(&previous_hash, BLOCKCHAIN_INITIAL_DIFFICULTY, &timestamp, &transactions, nonce + 1);
+            if hash_result.starts_with(&blockchain_difficulty_str) {
+                break;
+            }
             nonce += 1
         }
 
