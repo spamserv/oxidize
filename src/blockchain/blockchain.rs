@@ -2,8 +2,10 @@
 const BLOCKCHAIN_INITIAL_DIFFICULTY: u8 = 4;
 const BLOCKCHAIN_INITIAL_NONCE: u64 = 0;
 
-use sha2::{Digest, Sha256};
 use chrono::Utc;
+use thiserror::Error;
+
+use crate::helpers::HashHelper;
 
 #[derive(Debug)]
 pub struct Blockchain {
@@ -11,13 +13,13 @@ pub struct Blockchain {
 }
 
 #[derive(Debug)]
-struct Block {
+pub struct Block {
     header: BlockHeader,
     body: BlockBody
 }
 
 #[derive(Debug)]
-struct BlockHeader {
+pub struct BlockHeader {
     timestamp: String,
     previous_hash: String,
     current_hash: String,
@@ -35,6 +37,22 @@ pub struct BlockTransaction {
     inputs: String,
     outputs: String,
     metadata: TransactionMetadata,
+}
+
+#[derive(Error, Debug)]
+enum BlockValidationError {
+    #[error("Block not found with the specified hash")]
+    BlockNotFound,
+    #[error("Blockchain must have at least 2 blocks")]
+    InsufficientBlocks,
+    #[error("Invalid block hash format or value")]
+    InvalidHash,
+    #[error("Previous block not found in chain")]
+    PreviousBlockNotFound,
+    #[error("Previous hash mismatch")]
+    PreviousHashMismatch,
+    #[error("Block timestamp must be greater than previous block")]
+    InvalidTimestamp,
 }
 
 #[derive(Debug)]
@@ -59,6 +77,38 @@ impl Blockchain {
         self.blocks.push(new_block);
     }
 
+    pub fn validate_single_block(&mut self, hash: &String) -> Result<&Block, BlockValidationError> {
+        let block= self.blocks
+            .iter()
+            .find(|b| b.header.current_hash == *hash)
+            .ok_or(BlockValidationError::BlockNotFound)?;
+
+        if self.blocks.len() <= 1 {
+            return Err(BlockValidationError::InsufficientBlocks)
+        }
+
+        if !HashHelper::is_valid_hash(&mut block) {
+            return Err(BlockValidationError::InvalidHash)
+        }
+
+        let prev_block = self.blocks
+            .iter()
+            .find(|b| b.header.current_hash == block.header.previous_hash)
+            .ok_or(BlockValidationError::PreviousBlockNotFound)?;
+        
+        if prev_block.header.current_hash == block.header.previous_hash {
+            return Err(BlockValidationError::PreviousHashMismatch)
+        }
+
+        if block.header.timestamp <= prev_block.header.timestamp {
+            return Err(BlockValidationError::InvalidTimestamp)
+        }
+
+        Ok(block)
+
+    }
+
+
 }
 
 impl Block {
@@ -82,7 +132,7 @@ impl Block {
         
         
         while !hash_result.starts_with(&blockchain_difficulty_str){
-            hash_result = Block::generate_hash(&previous_hash, BLOCKCHAIN_INITIAL_DIFFICULTY, &timestamp, &transactions, nonce + 1);
+            hash_result = HashHelper::generate_hash(&previous_hash, BLOCKCHAIN_INITIAL_DIFFICULTY, &timestamp, &transactions, nonce + 1);
             nonce += 1
         }
 
@@ -111,7 +161,7 @@ impl Block {
         let blockchain_difficulty_str = "0".repeat(blockchain_difficulty as usize);
         
         while !hash_result.starts_with(&blockchain_difficulty_str){
-            hash_result = Block::generate_hash(&previous_hash, blockchain_difficulty, &timestamp, &transactions, nonce + 1);
+            hash_result = HashHelper::generate_hash(&previous_hash, blockchain_difficulty, &timestamp, &transactions, nonce + 1);
             nonce += 1
         }
 
@@ -133,14 +183,14 @@ impl Block {
         }
     }
 
-    fn generate_hash(previous_hash: &String, difficulty: u8, timestamp: &String, transactions: &Vec<BlockTransaction>, nonce: u64) -> String {
-            let combined_string = format!("{}{}{}{:?}{}", previous_hash, &difficulty, timestamp, transactions, nonce);
-            let mut hasher = Sha256::new();
-            hasher.update(combined_string);
-            let hash_result = hasher.finalize();
-            let hash_result = format!("{:x}", hash_result);
-            hash_result
-    }
+    // fn generate_hash(previous_hash: &String, difficulty: u8, timestamp: &String, transactions: &Vec<BlockTransaction>, nonce: u64) -> String {
+    //         let combined_string = format!("{}{}{}{:?}{}", previous_hash, &difficulty, timestamp, transactions, nonce);
+    //         let mut hasher = Sha256::new();
+    //         hasher.update(combined_string);
+    //         let hash_result = hasher.finalize();
+    //         let hash_result = format!("{:x}", hash_result);
+    //         hash_result
+    // }
     
 }
 

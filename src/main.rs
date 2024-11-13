@@ -1,5 +1,6 @@
-use blockchain::blockchain::Blockchain;
-use blockchain::wallet::Wallet;
+mod blockchain;
+
+use blockchain::*;
 
 fn main() {
     println!("Hello, world!");

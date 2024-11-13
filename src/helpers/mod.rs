@@ -1,1 +1,2 @@
-pub mod generators;
+mod helpers;
+pub use helpers::HashHelper;
