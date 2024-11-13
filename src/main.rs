@@ -11,12 +11,13 @@ fn main() {
 
     println!("{}", "Creating 5 blocks".bold());
 
-    for _ in 1..=5 {
+    for _ in 1..=15 {
         node.add_block();
     }
 
     let blocks = node.blocks().clone(); 
     let third_block = blocks.get(2).unwrap().clone();
+    let seventh_block = blocks.get(6).unwrap().clone();
     match node.validate_single_block(third_block.header().current_hash()) {
         Err(e) => println!("Error on validating the block {} with error {}", third_block.header().current_hash(), e),
         Ok(_) => println!("{}", "Block validated".bold().green())
@@ -25,6 +26,15 @@ fn main() {
     match node.validate_full_chain() {
         Err(e) => println!("Error validating full chain with error {}", e),
         Ok(_) => println!("{}", "Full chain validated".bold().green())
+    }
+
+    match node.validate_range_chain(third_block.header().current_hash(), seventh_block.header().current_hash()) {
+        Err(e) => println!("Error validating chain range with error {}", e),
+        Ok(_) => println!("{} from: {} to {}", 
+            "Chain range validated".bold().green(), 
+            third_block.header().current_hash().yellow(), 
+            seventh_block.header().current_hash().yellow()
+        )
     }
 
     println!("{}", "Creating 2 wallets".bold());

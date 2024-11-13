@@ -1,4 +1,5 @@
 use core::time;
+use std::collections::HashMap;
 
 // Imports
 use chrono::Utc;
@@ -63,6 +64,8 @@ pub enum BlockValidationError {
     PreviousHashMismatch,
     #[error("Block timestamp must be greater than previous block")]
     InvalidTimestamp,
+    #[error("Hash `from_hash` index needs to be lower than `to_hash`")]
+    RangeIndexFault
 }
 
 impl Blockchain {
@@ -112,10 +115,48 @@ impl Blockchain {
     }
 
     pub fn validate_full_chain(&mut self) -> Result<(), BlockValidationError> {
+        if self.blocks.len() <= 1 {
+            return Err(BlockValidationError::InsufficientBlocks)
+        }
+
         for (idx, block) in self.blocks.iter().enumerate() {
-            if self.blocks.len() <= 1 {
-                return Err(BlockValidationError::InsufficientBlocks)
+            if !HashHelper::is_valid_hash(&block) {
+                return Err(BlockValidationError::InvalidHash)
             }
+            
+            if idx != 0 {
+                let prev_block = self.blocks
+                .iter()
+                .find(|b| b.header.current_hash == block.header.previous_hash)
+                .ok_or(BlockValidationError::PreviousBlockNotFound)?;
+
+                if prev_block.header.current_hash != block.header.previous_hash {
+                    return Err(BlockValidationError::PreviousHashMismatch)
+                }
+
+                if block.header.timestamp <= prev_block.header.timestamp {
+                    return Err(BlockValidationError::InvalidTimestamp)
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub fn validate_range_chain(&mut self, from_hash: &String, to_hash: &String) -> Result<(), BlockValidationError> {
+        let (from_index, to_index) = match self.find_hash_indices(from_hash, to_hash) {
+            None => return Err(BlockValidationError::RangeIndexFault),
+            Some((from_index, to_index)) => (from_index, to_index),
+        };
+
+        if self.blocks.len() <= 1 {
+            return Err(BlockValidationError::InsufficientBlocks)
+        }
+
+        for idx in from_index..=to_index {
+            
+            let block = self.blocks
+                .get(idx)
+                .ok_or(BlockValidationError::BlockNotFound)?;
     
             if !HashHelper::is_valid_hash(&block) {
                 return Err(BlockValidationError::InvalidHash)
@@ -137,6 +178,23 @@ impl Blockchain {
             }
         }
         Ok(())
+
+    }
+
+    pub fn find_hash_indices(&self, from_hash: &str, to_hash: &str) -> Option<(usize, usize)> {
+        let mut hash_to_index: HashMap<&str, usize> = HashMap::new();
+
+        for (i, block) in self.blocks.iter().enumerate() {
+            hash_to_index.entry(&block.header.current_hash).or_insert(i);
+        }
+
+        let from_index = hash_to_index.get(from_hash);
+        let to_index = hash_to_index.get(to_hash);
+
+        match (from_index, to_index) {
+            (Some(from_idx), Some(to_idx)) => Some((*from_idx, *to_idx)),
+            _ => None,
+        }
     }
 
     pub fn blocks(&self) -> Vec<Block> {
