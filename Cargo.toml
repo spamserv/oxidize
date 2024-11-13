@@ -10,3 +10,4 @@ thiserror = "2.0.3"
 hdwallet = "0.4.1"
 sha2 = "0.10.8"
 bip39 = { version = "2.1.0", features = ["rand"] }
+colored = "2.1.0"
