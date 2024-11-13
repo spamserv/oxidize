@@ -1,3 +1,5 @@
+use core::time;
+
 // Imports
 use chrono::Utc;
 use thiserror::Error;
@@ -6,7 +8,7 @@ use thiserror::Error;
 use crate::helpers::HashHelper;
 
 // Consts
-const BLOCKCHAIN_INITIAL_DIFFICULTY: u8 = 4;
+const BLOCKCHAIN_INITIAL_DIFFICULTY: u8 = 2;
 const BLOCKCHAIN_INITIAL_NONCE: u64 = 0;
 #[derive(Debug, Clone)]
 pub struct Blockchain {
@@ -144,7 +146,7 @@ impl Block {
         let blockchain_difficulty_str = "0".repeat(BLOCKCHAIN_INITIAL_DIFFICULTY as usize);
         
         loop {
-            hash_result = HashHelper::generate_hash(&previous_hash, BLOCKCHAIN_INITIAL_DIFFICULTY, &timestamp, &transactions, nonce + 1);
+            hash_result = HashHelper::generate_hash(&previous_hash, BLOCKCHAIN_INITIAL_DIFFICULTY, &timestamp, &transactions, nonce);
             if hash_result.starts_with(&blockchain_difficulty_str) {
                 break;
             }
@@ -155,7 +157,7 @@ impl Block {
             previous_hash: previous_hash.to_string(),
             difficulty: BLOCKCHAIN_INITIAL_DIFFICULTY,
             nonce,
-            timestamp: Utc::now().to_rfc3339(),
+            timestamp,
             current_hash: hash_result
         };
 
@@ -173,24 +175,26 @@ impl Block {
         let timestamp = Utc::now().to_rfc3339();
         let mut nonce = BLOCKCHAIN_INITIAL_NONCE;
         let mut hash_result = String::new();
-        let transactions = Vec::new();
         let blockchain_difficulty_str = "0".repeat(blockchain_difficulty as usize);
         
-        while !hash_result.starts_with(&blockchain_difficulty_str){
-            hash_result = HashHelper::generate_hash(&previous_hash, blockchain_difficulty, &timestamp, &transactions, nonce + 1);
+        loop {
+            hash_result = HashHelper::generate_hash(&previous_hash, blockchain_difficulty, &timestamp, &transactions, nonce);
+            if hash_result.starts_with(&blockchain_difficulty_str) {
+                break;
+            }
             nonce += 1
-        }
+        }    
 
         let header = BlockHeader {
             previous_hash: previous_hash.to_string(),
             difficulty: blockchain_difficulty,
             nonce,
-            timestamp: Utc::now().to_rfc3339(),
+            timestamp,
             current_hash: hash_result
         };
 
         let body = BlockBody {
-            transactions
+            transactions: transactions.to_vec()
         };
 
         Self {

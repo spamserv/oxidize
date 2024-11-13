@@ -9,8 +9,8 @@ fn main() {
     node.add_block();
     node.add_block();
     node.add_block();
-    node.add_block();
-    node.add_block();
+    // node.add_block();
+    // node.add_block();
 
     let blocks = node.blocks().clone(); 
     let third_block = blocks.get(2).unwrap().clone();
