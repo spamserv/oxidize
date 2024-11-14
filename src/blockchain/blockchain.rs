@@ -13,7 +13,13 @@ const BLOCKCHAIN_INITIAL_DIFFICULTY: u8 = 2;
 const BLOCKCHAIN_INITIAL_NONCE: u64 = 0;
 #[derive(Debug, Clone)]
 pub struct Blockchain {
-    blocks: Vec<Block>
+    blocks: Vec<Block>,
+    config: BlockchainConfig
+}
+
+#[derive(Debug, Clone)]
+pub struct BlockchainConfig {
+    difficulty: u8,
 }
 
 #[derive(Debug, Clone)]
@@ -70,11 +76,19 @@ pub enum BlockValidationError {
 
 impl Blockchain {
     pub fn build() -> Self {
+        let config = BlockchainConfig {
+            difficulty: BLOCKCHAIN_INITIAL_DIFFICULTY
+        };
         let genesis_block = Block::create_genesis_block();
         let blocks = vec![genesis_block];
         return Self {
-            blocks
+            blocks,
+            config
         }
+    }
+
+    pub fn config(&self) -> &BlockchainConfig {
+        &self.config
     }
 
     pub fn add_block(&mut self){

@@ -5,13 +5,17 @@ use blockchain::*;
 
 use colored::Colorize;
 
+const NUMBER_OF_BLOCKS: u16 = 12;
+
 fn main() {
     println!("Hello, world!");
+
     let mut node = Blockchain::build();
+    println!("{}", "Initiated blockchain, with genesis block".bold().green());
+    dbg!(node.config());
 
-    println!("{}", "Creating 5 blocks".bold());
-
-    for _ in 1..=15 {
+    println!("Creating {} blocks", NUMBER_OF_BLOCKS);
+    for _ in 1..=NUMBER_OF_BLOCKS {
         node.add_block();
     }
 
