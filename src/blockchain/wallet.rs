@@ -9,13 +9,13 @@ pub struct Wallet {
     id: String, // Derived from public key
     name: String,
     created_at: String,
-    addresses: Vec<Address>,
+    addresses: Vec<Account>,
     public_key: PublicKey,
     private_key: SecretKey // Used for testing, idea is not to store it in the future
 }
 
 #[derive(Debug)]
-pub struct Address {
+pub struct Account {
     address: String,
     created_at: String,
     transaction_history: Vec<Transaction>
@@ -38,7 +38,7 @@ impl Wallet {
     }
 
     pub fn create_new_address(&mut self) {
-        let address = Address::new(&self.public_key);
+        let address = Account::new(&self.public_key);
         self.addresses.push(address);
     }
 
@@ -71,7 +71,7 @@ impl Wallet {
     }
 }
 
-impl Address {
+impl Account {
     pub fn new(public_key: &PublicKey) -> Self {
         let created_at = Utc::now().to_rfc3339();
         let address = Self::generate_address(&public_key);

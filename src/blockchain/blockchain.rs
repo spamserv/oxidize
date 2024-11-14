@@ -44,7 +44,7 @@ pub struct BlockBody {
 
 #[derive(Debug, Clone)]
 pub struct Transaction {
-    inputs: TransactionInput,
+    inputs: Vec<TransactionInput>,
     output: Vec<TransactionOutput>,
     metadata: TransactionMetadata,
 }
