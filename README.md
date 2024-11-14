@@ -43,8 +43,8 @@ Here is the current state of the blockchain:
 #### 4. Block Verification
 - [x] Create a function to verify block integrity (hash, timestamp, difficulty).
 - [x] Verify single block validity.
-- [ ] Verify validity of part of the chain.
-- [ ] Verify validity of part of the full chain.
+- [x] Verify validity of part of the chain.
+- [x] Verify validity of part of the full chain.
 - [ ] Implement block validation rules for consensus enforcement.
 
 #### 5. Blockchain State Management
