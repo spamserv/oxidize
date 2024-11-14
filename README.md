@@ -21,59 +21,63 @@ Here is the current state of the blockchain:
 - [ ] Create a mining function to solve nonce for PoW.
 - [ ] Develop a staking mechanism for PoS, if chosen.
 
-#### 2.1. Transaction Flexibility
+#### 2. Mempool
+- [ ] Implement mempool for the unprocessed (pending) transactions.
+- [ ] Once the block is mined, remove transactions from mempool and update transaction status.
+
+#### 3.1. Transaction Flexibility
 - [ ] Define Transaction and its usage
 - [ ] Decide on block size, based on the usage of blockchain
 - [ ] Decide if block will be flexible in size (changeable) or fixed
 - [ ] Add transaction fee
 
-#### 2.2. Transaction Validation
+#### 3.2. Transaction Validation
 - [ ] Implement transaction validation (e.g., check inputs vs. outputs).
 - [ ] Add digital signatures for transactions to ensure authenticity.
 - [ ] Implement which transaction go into block, and which don't based on transaction fee
 
-#### 3. Wallets
+#### 4. Wallets
 - [x] Implement Wallet & Address creation
 - [ ] Implement send of value functionality
 
-#### 3. Networking and Node Communication
+#### 5. Networking and Node Communication
 - [ ] Build a peer-to-peer (P2P) network for node communication.
 - [ ] Implement block and transaction propagation among nodes.
 - [ ] Develop synchronization for consistent blockchain copies across nodes.
 
-#### 4. Block Verification
+#### 6. Block Verification
 - [x] Create a function to verify block integrity (hash, timestamp, difficulty).
 - [x] Verify single block validity.
 - [x] Verify validity of part of the chain.
 - [x] Verify validity of part of the full chain.
 - [ ] Implement block validation rules for consensus enforcement.
 
-#### 5. Block Mining
+#### 7. Block Mining
 - [ ] Mine a block based on a condition, e.g. block is minimum 70% of its limit
 - [ ] Add block mining fee
 
-#### 6. Blockchain State Management
+#### 8. Blockchain State Management
 - [ ] Design a system to track user balances and UTXOs.
 - [ ] Update blockchain state after adding new blocks.
 
-#### 7. Merkle Tree Structure
+#### 9. Merkle Tree Structure
 - [ ] Implement Merkle trees for block transactions.
 - [ ] Integrate Merkle root in block headers for transaction verification.
 
-#### 8. User Interface (Optional)
+#### 10. User Interface (Optional)
 - [ ] Create a CLI interface for blockchain interaction.
 - [ ] Build a simple web interface for user interactions like sending transactions and viewing blocks.
 
-#### 9. Security Features
+#### 11. Security Features
 - [ ] Add measures to prevent double-spending.
 - [ ] Implement protections against replay attacks.
 - [ ] Include time constraints for block mining to prevent stale blocks.
 
-#### 10. Logging and Monitoring
+#### 12. Logging and Monitoring
 - [ ] Add detailed logging for blockchain events.
 - [ ] Implement monitoring tools to track blockchain performance metrics.
 
-#### 11. Advanced Features
+#### 13. Advanced Features
 - [ ] Introduce smart contract functionality for extended capabilities.
 - [ ] Research scalability solutions (e.g., sharding, layer-2 technologies).
 
@@ -92,6 +96,8 @@ Down is the explanation of each section of a blockchain.
 ### Address
 
 ### Helpers
+
+### TransactionManager
 
 ## Oxidize Features
 
