@@ -1,11 +1,11 @@
 use sha2::{Digest, Sha256};
 
-use crate::blockchain::{Block, BlockTransaction};
+use crate::blockchain::{Block, Transaction};
 
 pub struct HashHelper;
 
 impl HashHelper {
-    pub fn generate_hash(previous_hash: &String, difficulty: u8, timestamp: &String, transactions: &Vec<BlockTransaction>, nonce: u64) -> String {
+    pub fn generate_hash(previous_hash: &String, difficulty: u8, timestamp: &String, transactions: &Vec<Transaction>, nonce: u64) -> String {
         let combined_string = format!("{}{}{}{:?}{}", previous_hash, difficulty, timestamp, transactions, nonce);
         let mut hasher = Sha256::new();
         hasher.update(combined_string);

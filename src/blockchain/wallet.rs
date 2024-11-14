@@ -3,7 +3,7 @@ use sha2::{Digest, Sha256};
 use chrono::Utc;
 use bip39::{Mnemonic, Language};
 
-use crate::blockchain::BlockTransaction;
+use crate::blockchain::Transaction;
 #[derive(Debug)]
 pub struct Wallet {
     id: String, // Derived from public key
@@ -18,7 +18,7 @@ pub struct Wallet {
 pub struct Address {
     address: String,
     created_at: String,
-    transaction_history: Vec<Option<BlockTransaction>>
+    transaction_history: Vec<Transaction>
 }
 
 impl Wallet {
@@ -38,7 +38,7 @@ impl Wallet {
     }
 
     pub fn create_new_address(&mut self) {
-        let address = Address::new();
+        let address = Address::new(&self.public_key);
         self.addresses.push(address);
     }
 
@@ -72,9 +72,9 @@ impl Wallet {
 }
 
 impl Address {
-    pub fn new() -> Self {
+    pub fn new(public_key: &PublicKey) -> Self {
         let created_at = Utc::now().to_rfc3339();
-        let address = Self::generate_address();
+        let address = Self::generate_address(&public_key);
         let transaction_history = vec![];
 
         Self {
@@ -84,8 +84,8 @@ impl Address {
         }
     }
 
-    fn generate_address() -> String {
-        let combined_string = format!("");
+    fn generate_address(public_key: &PublicKey) -> String {
+        let combined_string = format!("{}", public_key);
         let mut hasher = Sha256::new();
         hasher.update(combined_string);
         let hash_result = hasher.finalize();

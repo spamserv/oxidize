@@ -39,13 +39,13 @@ pub struct BlockHeader {
 
 #[derive(Debug, Clone)]
 pub struct BlockBody {
-    transactions: Vec<BlockTransaction>
+    transactions: Vec<Transaction>
 }
 
 #[derive(Debug, Clone)]
-pub struct BlockTransaction {
-    input: TransactionInput,
-    output: TransactionOutput,
+pub struct Transaction {
+    inputs: TransactionInput,
+    output: Vec<TransactionOutput>,
     metadata: TransactionMetadata,
 }
 
@@ -229,7 +229,7 @@ impl Blockchain {
 }
 
 impl Block {
-    fn new(previous_hash: &String, transactions: &Vec<BlockTransaction>, blockchain_difficulty: u8) -> Self {
+    fn new(previous_hash: &String, transactions: &Vec<Transaction>, blockchain_difficulty: u8) -> Self {
         if transactions.is_empty() {
             let genesis_block = Block::create_data_block(previous_hash, transactions, blockchain_difficulty);
             genesis_block
@@ -281,7 +281,7 @@ impl Block {
         }
     }
 
-    pub fn create_data_block(previous_hash: &String, transactions: &Vec<BlockTransaction>, blockchain_difficulty: u8) -> Self {
+    pub fn create_data_block(previous_hash: &String, transactions: &Vec<Transaction>, blockchain_difficulty: u8) -> Self {
         let timestamp = Utc::now().to_rfc3339();
         let mut nonce = BLOCKCHAIN_INITIAL_NONCE;
         let mut hash_result = String::new();
@@ -337,7 +337,7 @@ impl BlockHeader {
 }
 
 impl BlockBody {
-    pub fn transactions(&self) -> &Vec<BlockTransaction> {
+    pub fn transactions(&self) -> &Vec<Transaction> {
         &self.transactions
     }
 }
