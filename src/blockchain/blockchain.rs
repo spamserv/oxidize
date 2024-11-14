@@ -4,8 +4,8 @@
 //! the validation of transactions within the blockchain.
 //! 
 use core::time;
-use std::collections::HashMap;
-use super::Transaction;
+use std::{collections::HashMap, vec};
+use super::{Address, Transaction, TransactionInput, TransactionOutput};
 
 // Imports
 use chrono::Utc;
@@ -14,14 +14,15 @@ use thiserror::Error;
 // Modules/Crates
 use crate::helpers::HashHelper;
 
-use super::TransactionStatus;
-
 // Consts
 const BLOCKCHAIN_INITIAL_DIFFICULTY: u8 = 2;
 const BLOCKCHAIN_INITIAL_NONCE: u64 = 0;
 #[derive(Debug, Clone)]
 pub struct Blockchain {
     blocks: Vec<Block>,
+    mempool: Vec<TransactionInput>,
+    addresses: Vec<Address>,
+    utxo: Vec<TransactionOutput>,
     config: BlockchainConfig
 }
 
@@ -79,9 +80,16 @@ impl Blockchain {
         };
         let genesis_block = Block::create_genesis_block();
         let blocks = vec![genesis_block];
+        let mempool  = vec![];
+        let utxo = vec![];
+        let addresses = vec![];
+
         return Self {
             blocks,
-            config
+            config,
+            mempool,
+            utxo,
+            addresses
         }
     }
 

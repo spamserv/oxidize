@@ -1,5 +1,7 @@
-pub mod address {
-    struct Address {
-        
-    }
+use super::{Transaction};
+
+#[derive(Debug, Clone)]
+pub struct Address {
+    pub id: String,
+    pub transactions: Vec<Transaction>
 }

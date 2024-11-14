@@ -78,12 +78,12 @@ impl TransactionManager {
 }
 
 impl TransactionBuilder {
-    pub fn add_input(&mut self, tx_id: &str, index: u32, amount: u64) {
+    pub fn add_input(&mut self, tx_id: &str, index: u32, amount: u64) -> TransactionInput {
         // Add an input to the transaction
         todo!()
     }
 
-    pub fn add_output(&mut self, recipient: &str, amount: u64) {
+    pub fn add_output(&mut self, recipient: &str, amount: u64) -> TransactionOutput {
         // Add an output to the transaction
         todo!()
     }

@@ -3,12 +3,14 @@
 //! - account creation
 //! - address generation and validation
 
+use std::ops::Add;
+
 use hdwallet::{secp256k1::{PublicKey, SecretKey}, ExtendedPrivKey, ExtendedPubKey};
 use sha2::{Digest, Sha256};
 use chrono::Utc;
 use bip39::{Mnemonic, Language};
 
-use crate::blockchain::Transaction;
+use super::{Transaction, Address};
 
 /// Wallet struct, used for storing accounts and key pair
 #[derive(Debug)]
@@ -24,7 +26,7 @@ pub struct Wallet {
 /// Account struct, used to store transaction history, address.
 #[derive(Debug)]
 pub struct Account {
-    address: String,
+    address: Address,
     created_at: String,
     transaction_history: Vec<Transaction>
 }
@@ -87,7 +89,11 @@ impl Account {
     /// Creates new account
     pub fn new(public_key: &PublicKey) -> Self {
         let created_at = Utc::now().to_rfc3339();
-        let address = Self::generate_address(&public_key);
+        //let address = Self::generate_address(&public_key);
+        let address = Address {
+            id: "TO_DO".to_string(),
+            transactions: vec![],
+        };
         let transaction_history = vec![];
 
         Self {
