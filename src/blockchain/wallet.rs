@@ -1,4 +1,4 @@
-use hdwallet::{secp256k1::{PublicKey}, ExtendedPrivKey, ExtendedPubKey};
+use hdwallet::{secp256k1::{PublicKey, SecretKey}, ExtendedPrivKey, ExtendedPubKey};
 use sha2::{Digest, Sha256};
 use chrono::Utc;
 use bip39::{Mnemonic, Language};
@@ -10,7 +10,8 @@ pub struct Wallet {
     name: String,
     created_at: String,
     addresses: Vec<Address>,
-    public_key: PublicKey // Used for testing, idea is not to store it in the future
+    public_key: PublicKey,
+    private_key: SecretKey // Used for testing, idea is not to store it in the future
 }
 
 #[derive(Debug)]
@@ -24,11 +25,12 @@ impl Wallet {
     pub fn new(name: String) -> Self {
         let created_at = Utc::now().to_rfc3339();
         let addresses = vec![];
-        let public_key = Wallet::generate_public_key().unwrap();
+        let (public_key, private_key) = Wallet::generate_key_pair().unwrap();
         let id = "".to_string();
         Self {
             id,
             public_key,
+            private_key,
             created_at,
             addresses,
             name,
@@ -40,22 +42,7 @@ impl Wallet {
         self.addresses.push(address);
     }
 
-    // fn open_mnemonic_file() -> io::Result<Vec<String>> {
-    //     let mnemonic_file_path = String::from("mnemonic.txt");
-    //     let file = File::open(mnemonic_file_path)?;
-    //     let reader = BufReader::new(file);
-
-    //     let mut words: Vec<String> = Vec::new();
-
-    //     for word in reader.lines() {
-    //         let word = word?;
-    //         words.push(word);
-    //     }
-
-    //     Ok(words)
-    // }
-
-    fn generate_public_key() -> Result<PublicKey, String> {
+    fn generate_key_pair() -> Result<(PublicKey, SecretKey), String> {
         // Generate a mnemonic and seed
         let mut rng = bip39::rand::thread_rng();
         let mnemonic = Mnemonic::generate_in_with(&mut rng, Language::English, 24).unwrap();
@@ -76,7 +63,7 @@ impl Wallet {
             //println!("{}", mnemonic);
     
             // Return the derived public key
-            return Ok(child_pub_key.public_key);
+            return Ok((child_pub_key.public_key, master_key.private_key));
         }
     
         // If the master key creation failed, return an error

@@ -44,9 +44,19 @@ pub struct BlockBody {
 
 #[derive(Debug, Clone)]
 pub struct BlockTransaction {
-    inputs: String,
-    outputs: String,
+    input: TransactionInput,
+    output: TransactionOutput,
     metadata: TransactionMetadata,
+}
+
+#[derive(Debug, Clone)]
+pub struct TransactionInput {
+
+}
+
+#[derive(Debug, Clone)]
+pub struct TransactionOutput {
+
 }
 
 #[derive(Debug, Clone)]
