@@ -43,12 +43,12 @@ fn main() {
 
     println!("{}", "Creating 2 wallets".bold());
     let mut wallet1 = Wallet::new("Wallet#1".to_string());
-    wallet1.create_new_address();
-    wallet1.create_new_address();
+    wallet1.create_new_account();
+    wallet1.create_new_account();
     
     let mut wallet2 = Wallet::new("Wallet#2".to_string());
-    wallet2.create_new_address();
-    wallet2.create_new_address();
+    wallet2.create_new_account();
+    wallet2.create_new_account();
 
     dbg!(node);
     dbg!(wallet1);
