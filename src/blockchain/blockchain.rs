@@ -1,5 +1,11 @@
+//! This module contains the core logic for the blockchain.
+//!
+//! It defines the structure of the blockchain, how blocks are created, and
+//! the validation of transactions within the blockchain.
+//! 
 use core::time;
 use std::collections::HashMap;
+use super::Transaction;
 
 // Imports
 use chrono::Utc;
@@ -44,34 +50,6 @@ pub struct BlockBody {
     transactions: Vec<Transaction>
 }
 
-#[derive(Debug, Clone)]
-pub struct Transaction {
-    inputs: Vec<TransactionInput>,
-    output: Vec<TransactionOutput>,
-    metadata: TransactionMetadata,
-}
-
-#[derive(Debug, Clone)]
-pub struct TransactionInput {
-    previous_tx_hash: String,  // Hash of the previous transaction
-    index: u32,                // Index of the output being used
-    signature: String,         // Signature for authorization
-}
-
-#[derive(Debug, Clone)]
-pub struct TransactionOutput {
-    recipient_address: String,  // The address of the recipient
-    amount: u64,                // The amount of currency being sent
-}
-
-#[derive(Debug, Clone)]
-struct TransactionMetadata {
-    id: String,
-    timestamp: String,
-    value: String,
-    state: TransactionStatus
-}
-
 #[derive(Error, Debug)]
 pub enum BlockValidationError {
     #[error("Block not found with the specified hash")]
@@ -90,7 +68,11 @@ pub enum BlockValidationError {
     RangeIndexFault
 }
 
+/// Blockchain structure, consisting of vector of blocks and its configuration
 impl Blockchain {
+    
+    /// Builds a blockchain from scratch
+    /// Creates genesis block based on the BLOCKCHAIN_INITIAL_DIFFICULTY
     pub fn build() -> Self {
         let config = BlockchainConfig {
             difficulty: BLOCKCHAIN_INITIAL_DIFFICULTY
@@ -103,16 +85,21 @@ impl Blockchain {
         }
     }
 
+    /// Returns blockchain configuration
     pub fn config(&self) -> &BlockchainConfig {
         &self.config
     }
 
+    /// Mines a new block
+    /// Based on the previous block hash and transactions that will go inside the block
     pub fn add_block(&mut self){
         let last_block_header = &self.blocks.last().unwrap().header;
         let new_block = Block::new(&last_block_header.current_hash, &vec![], last_block_header.difficulty);
         self.blocks.push(new_block);
     }
 
+    /// Validates a single block by checking several factors
+    /// Returns a Result<(), BlockValidationError>
     pub fn validate_single_block(&mut self, hash: &String) -> Result<(), BlockValidationError> {
         let block= self.blocks
             .iter()
@@ -144,6 +131,8 @@ impl Blockchain {
 
     }
 
+    /// Validates the full chain by looping through every block
+    /// Returns a Result<(), BlockValidationError>
     pub fn validate_full_chain(&mut self) -> Result<(), BlockValidationError> {
         if self.blocks.len() <= 1 {
             return Err(BlockValidationError::InsufficientBlocks)
@@ -172,6 +161,8 @@ impl Blockchain {
         Ok(())
     }
 
+    /// Validates a range between `from_hash` and `to_hash`
+    /// Returns a Result<(), BlockValidationError>
     pub fn validate_range_chain(&mut self, from_hash: &String, to_hash: &String) -> Result<(), BlockValidationError> {
         let (from_index, to_index) = match self.find_hash_indices(from_hash, to_hash) {
             None => return Err(BlockValidationError::RangeIndexFault),
@@ -211,6 +202,9 @@ impl Blockchain {
 
     }
 
+    /// Finds indexes of:
+    /// 1) the hash from where `validate_range_chain` should start validation
+    /// 2) the hash to where `validate_range_chain` should end validation, inclusive
     pub fn find_hash_indices(&self, from_hash: &str, to_hash: &str) -> Option<(usize, usize)> {
         let mut hash_to_index: HashMap<&str, usize> = HashMap::new();
 
@@ -227,6 +221,7 @@ impl Blockchain {
         }
     }
 
+    /// Returns copy of the blocks
     pub fn blocks(&self) -> Vec<Block> {
         self.blocks.clone()
     }
@@ -235,6 +230,8 @@ impl Blockchain {
 }
 
 impl Block {
+    /// Generates a new block based on previous block hash, transactions that are meant to go into the block
+    /// and current blockchain difficulty 
     fn new(previous_hash: &String, transactions: &Vec<Transaction>, blockchain_difficulty: u8) -> Self {
         if transactions.is_empty() {
             let genesis_block = Block::create_data_block(previous_hash, transactions, blockchain_difficulty);
@@ -245,14 +242,22 @@ impl Block {
         }
     }
 
+    /// Returns BlockHeader
     pub fn header(&self) -> &BlockHeader {
         &self.header
     }
 
+    /// Returns BlockBody
     pub fn body(&self) -> &BlockBody {
         &self.body
     }
 
+    /// Crates genesis block, where previoush hash is `"0".repeat(64)`, based on:
+    /// - previous hash
+    /// - current timestamp
+    /// - blockchain difficulty
+    /// - transactions (empty)
+    /// - nonce that is iterated until the blockchain difficulty is met
     pub fn create_genesis_block() -> Self {
         let previous_hash = "0".repeat(64);
         let timestamp = Utc::now().to_rfc3339();
@@ -287,6 +292,12 @@ impl Block {
         }
     }
 
+    /// Crates data block, based on:
+    /// - previous block hash
+    /// - current timestamp
+    /// - blockchain difficulty
+    /// - transactions included in the block
+    /// - nonce that is iterated until the blockchain difficulty is met
     pub fn create_data_block(previous_hash: &String, transactions: &Vec<Transaction>, blockchain_difficulty: u8) -> Self {
         let timestamp = Utc::now().to_rfc3339();
         let mut nonce = BLOCKCHAIN_INITIAL_NONCE;
@@ -320,6 +331,7 @@ impl Block {
     }
 }
 
+/// BlockHeader structure
 impl BlockHeader {
     pub fn current_hash(&self) -> &String {
         &self.current_hash
@@ -342,6 +354,7 @@ impl BlockHeader {
     }
 }
 
+/// BlockBody structure
 impl BlockBody {
     pub fn transactions(&self) -> &Vec<Transaction> {
         &self.transactions

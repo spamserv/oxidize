@@ -1,4 +1,36 @@
-use super::Transaction;
+//! This module handles:
+//! - creating and signing the transaction
+//! - calculating transaction fee
+//! - building the transaction from scratch (inputs, outputs, validation)
+//! 
+
+#[derive(Debug, Clone)]
+pub struct Transaction {
+    inputs: Vec<TransactionInput>,
+    output: Vec<TransactionOutput>,
+    metadata: TransactionMetadata,
+}
+
+#[derive(Debug, Clone)]
+pub struct TransactionInput {
+    pub previous_tx_hash: String,  // Hash of the previous transaction
+    pub index: u32,                // Index of the output being used
+    pub signature: String,         // Signature for authorization
+}
+
+#[derive(Debug, Clone)]
+pub struct TransactionOutput {
+    pub recipient_address: String,  // The address of the recipient
+    pub amount: u64,                // The amount of currency being sent
+}
+
+#[derive(Debug, Clone)]
+struct TransactionMetadata {
+    id: String,
+    timestamp: String,
+    value: String,
+    state: TransactionStatus
+}
 
 #[derive(Debug, Clone)]
 pub enum TransactionStatus {
@@ -21,44 +53,53 @@ struct Signer {
 
 impl TransactionManager {
     pub fn create_transaction(&self, recipient: &str, amount: u64) -> Transaction {
-        // Logic for creating a transaction
+        todo!()
     }
 
     pub fn sign_transaction(&self, transaction: &mut Transaction) -> Result<(), String> {
         // Sign the transaction with private key
+        todo!()
     }
 
     pub fn broadcast_transaction(&self, transaction: &Transaction) -> Result<(), String> {
         // Broadcast the transaction to the blockchain network
+        todo!()
     }
 
     pub fn calculate_fee(&self, transaction: &Transaction) -> u64 {
         // Calculate transaction fee
+        todo!()
     }
 
     pub fn track_transaction(&self, tx_id: &str) -> Result<TransactionStatus, String> {
         // Track the status of the transaction
+        todo!()
     }
 }
 
 impl TransactionBuilder {
     pub fn add_input(&mut self, tx_id: &str, index: u32, amount: u64) {
         // Add an input to the transaction
+        todo!()
     }
 
     pub fn add_output(&mut self, recipient: &str, amount: u64) {
         // Add an output to the transaction
+        todo!()
     }
 
     pub fn create_change_output(&mut self, amount: u64) -> Result<(), String> {
         // Create a change output if the inputs exceed the transaction amount
+        todo!()
     }
 
     pub fn validate(&self) -> Result<(), String> {
         // Validate the transaction, ensuring inputs and outputs match
+        todo!()
     }
 
     pub fn calculate_fee(&self) -> u64 {
         // Calculate the fee based on the size and inputs/outputs
+        todo!()
     }
 }

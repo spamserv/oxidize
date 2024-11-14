@@ -1,9 +1,16 @@
+//! This module handles:
+//! - wallet creation
+//! - account creation
+//! - address generation and validation
+
 use hdwallet::{secp256k1::{PublicKey, SecretKey}, ExtendedPrivKey, ExtendedPubKey};
 use sha2::{Digest, Sha256};
 use chrono::Utc;
 use bip39::{Mnemonic, Language};
 
 use crate::blockchain::Transaction;
+
+/// Wallet struct, used for storing accounts and key pair
 #[derive(Debug)]
 pub struct Wallet {
     id: String, // Derived from public key
@@ -14,6 +21,7 @@ pub struct Wallet {
     private_key: SecretKey // Used for testing, idea is not to store it in the future
 }
 
+/// Account struct, used to store transaction history, address.
 #[derive(Debug)]
 pub struct Account {
     address: String,
@@ -22,6 +30,7 @@ pub struct Account {
 }
 
 impl Wallet {
+    /// Creates new wallet & generates key pair
     pub fn new(name: String) -> Self {
         let created_at = Utc::now().to_rfc3339();
         let accounts = vec![];
@@ -37,12 +46,14 @@ impl Wallet {
         }
     }
 
-    // Create new
+    /// Create new account for the wallet, based on the `public_key`
     pub fn create_new_account(&mut self) {
         let account = Account::new(&self.public_key);
         self.accounts.push(account);
     }
 
+    /// Generates keypair for the Wallet (PublicKey, SecretKey)
+    /// Based on the mnemonic 24 word english
     fn generate_key_pair() -> Result<(PublicKey, SecretKey), String> {
         // Generate a mnemonic and seed
         let mut rng = bip39::rand::thread_rng();
@@ -73,6 +84,7 @@ impl Wallet {
 }
 
 impl Account {
+    /// Creates new account
     pub fn new(public_key: &PublicKey) -> Self {
         let created_at = Utc::now().to_rfc3339();
         let address = Self::generate_address(&public_key);
@@ -85,6 +97,7 @@ impl Account {
         }
     }
 
+    /// Generate Account address based on the public key
     fn generate_address(public_key: &PublicKey) -> String {
         let combined_string = format!("{}", public_key);
         let mut hasher = Sha256::new();
