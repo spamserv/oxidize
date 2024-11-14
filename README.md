@@ -17,8 +17,8 @@ A detailed checklist to track the progress:.
 Here is the current state of the blockchain:
 
 #### 1. Consensus Mechanism
-- [ ] Implement a basic consensus algorithm (e.g., Proof of Work or Proof of Stake).
-- [ ] Create a mining function to solve nonce for PoW.
+- [x] Implement a basic consensus algorithm (e.g., Proof of Work or Proof of Stake).
+- [x] Create a mining function to solve nonce for PoW.
 - [ ] Develop a staking mechanism for PoS, if chosen.
 
 #### 2. Mempool
