@@ -9,7 +9,7 @@ pub struct Wallet {
     id: String, // Derived from public key
     name: String,
     created_at: String,
-    addresses: Vec<Account>,
+    accounts: Vec<Account>,
     public_key: PublicKey,
     private_key: SecretKey // Used for testing, idea is not to store it in the future
 }
@@ -24,7 +24,7 @@ pub struct Account {
 impl Wallet {
     pub fn new(name: String) -> Self {
         let created_at = Utc::now().to_rfc3339();
-        let addresses = vec![];
+        let accounts = vec![];
         let (public_key, private_key) = Wallet::generate_key_pair().unwrap();
         let id = "".to_string();
         Self {
@@ -32,14 +32,15 @@ impl Wallet {
             public_key,
             private_key,
             created_at,
-            addresses,
+            accounts,
             name,
         }
     }
 
-    pub fn create_new_address(&mut self) {
-        let address = Account::new(&self.public_key);
-        self.addresses.push(address);
+    // Create new
+    pub fn create_new_account(&mut self) {
+        let account = Account::new(&self.public_key);
+        self.accounts.push(account);
     }
 
     fn generate_key_pair() -> Result<(PublicKey, SecretKey), String> {

@@ -8,6 +8,8 @@ use thiserror::Error;
 // Modules/Crates
 use crate::helpers::HashHelper;
 
+use super::TransactionStatus;
+
 // Consts
 const BLOCKCHAIN_INITIAL_DIFFICULTY: u8 = 2;
 const BLOCKCHAIN_INITIAL_NONCE: u64 = 0;
@@ -51,19 +53,23 @@ pub struct Transaction {
 
 #[derive(Debug, Clone)]
 pub struct TransactionInput {
-
+    previous_tx_hash: String,  // Hash of the previous transaction
+    index: u32,                // Index of the output being used
+    signature: String,         // Signature for authorization
 }
 
 #[derive(Debug, Clone)]
 pub struct TransactionOutput {
-
+    recipient_address: String,  // The address of the recipient
+    amount: u64,                // The amount of currency being sent
 }
 
 #[derive(Debug, Clone)]
 struct TransactionMetadata {
-    sender: String,
-    receiver: String,
-    value: String
+    id: String,
+    timestamp: String,
+    value: String,
+    state: TransactionStatus
 }
 
 #[derive(Error, Debug)]
