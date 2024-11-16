@@ -4,10 +4,14 @@
 //! - building the transaction from scratch (inputs, outputs, validation)
 //! 
 
+use chrono::Utc;
+
+use crate::{config::BLOCKCHAIN_COINBASE_FEE, helpers::TransactionHelper};
+
 #[derive(Debug, Clone)]
 pub struct Transaction {
     inputs: Vec<TransactionInput>,
-    output: Vec<TransactionOutput>,
+    outputs: Vec<TransactionOutput>,
     metadata: TransactionMetadata,
 }
 
@@ -27,10 +31,9 @@ pub struct TransactionOutput {
 
 #[derive(Debug, Clone)]
 struct TransactionMetadata {
-    id: String,
+    transaction_id: String,
     timestamp: String,
-    value: String,
-    state: TransactionStatus
+    status: TransactionStatus
 }
 
 #[derive(Debug, Clone)]
@@ -59,8 +62,33 @@ struct Signer {
 }
 
 impl TransactionManager {
-    pub fn create_transaction(&self, recipient: &str, amount: u64) -> Transaction {
+    pub fn create_transaction(&self, recipient: &String, amount: u64) -> Transaction {
         todo!()
+    }
+    pub fn create_coinbase_transaction(&self, recipient: &String, amount: u64) -> Transaction {
+        let inputs = vec![];
+        let transaction_output = TransactionOutput{
+            amount: BLOCKCHAIN_COINBASE_FEE as u64,
+            recipient_address: recipient.to_string(),
+        };
+        let outputs = vec![transaction_output];
+
+        let timestamp = Utc::now().to_rfc3339();
+        let status = TransactionStatus::Pending;
+
+        let transaction_id = TransactionHelper::generate_transaction_id(&inputs, &outputs, &timestamp, &status);
+
+        let metadata = TransactionMetadata {
+            timestamp,
+            status,
+            transaction_id
+        };
+
+        Transaction {
+            inputs,
+            outputs,
+            metadata
+        }
     }
 
     pub fn sign_transaction(&self, transaction: &mut Transaction) -> Result<(), String> {
@@ -87,11 +115,7 @@ impl TransactionManager {
 impl TransactionBuilder {
     pub fn add_input(&mut self, tx_id: &String, index: u32, amount: u64) -> TransactionInput {
         // Add an input to the transaction
-        TransactionInput {
-            previous_tx_hash: tx_id.to_string(),
-            index,
-            amount
-        }
+        todo!()
     }
 
     pub fn add_output(&mut self, recipient: &str, amount: u64) -> TransactionOutput {

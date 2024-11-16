@@ -3,7 +3,7 @@
 //! such as generating new hashes and validating block hashes
 use sha2::{Digest, Sha256};
 
-use crate::blockchain::{Block, Transaction};
+use crate::blockchain::{Block, Transaction, TransactionInput, TransactionOutput, TransactionStatus};
 
 /// HashHelper struct storing various helper methods related to hashing
 pub struct HashHelper;
@@ -24,6 +24,19 @@ impl HashHelper {
     pub fn is_valid_hash(block: &Block) -> bool{
         let hash = Self::generate_hash(block.header().previous_hash(), block.header().difficulty(), block.header().timestamp(), block.body().transactions(), block.header().nonce());
         &hash == block.header().current_hash()
+    }
+}
+
+pub struct TransactionHelper {}
+
+impl TransactionHelper {
+    pub fn generate_transaction_id(inputs: &Vec<TransactionInput>, outputs: &Vec<TransactionOutput>, timestamp: &String, status: &TransactionStatus) -> String {
+        let combined_string = format!("{:?}{:?}{}{:?}", inputs, outputs, timestamp, status);
+        let mut hasher = Sha256::new();
+        hasher.update(combined_string);
+        let transaction_id = hasher.finalize();
+        let transaction_id = format!("{:x}", transaction_id);
+        transaction_id
     }
 }
 
