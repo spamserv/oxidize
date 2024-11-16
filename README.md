@@ -21,6 +21,16 @@ Here is the current state of the blockchain:
 - [x] Create a mining function to solve nonce for PoW.
 - [ ] Develop a staking mechanism for PoS, if chosen.
 
+#### 1.1 Initial supply
+- [ ] Pre-mining / Developer fund - creator gets the initial set of coins to himself for development
+- [ ] Initial Coin Offering (ICO) - issuing / selling tokens to early adopters
+
+#### 2. Mine Fee
+- [ ] Send mining fee for each new block mined to Node's wallet
+
+#### 3. Faucets
+- [ ] Distribute small amounts of cryptocurrencies for free to help users start interacting, e.g. when a Node joins for the first time.
+
 #### 2. Mempool
 - [ ] Implement mempool for the unprocessed (pending) transactions.
 - [ ] Once the block is mined, remove transactions from mempool and update transaction status.
@@ -80,6 +90,9 @@ Here is the current state of the blockchain:
 #### 13. Advanced Features
 - [ ] Introduce smart contract functionality for extended capabilities.
 - [ ] Research scalability solutions (e.g., sharding, layer-2 technologies).
+
+#### 14. Airdrop
+- [ ] TBD
 
 ## Oxidize - Project Explanation
 

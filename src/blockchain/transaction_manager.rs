@@ -16,6 +16,7 @@ pub struct TransactionInput {
     pub previous_tx_hash: String,  // Hash of the previous transaction
     pub index: u32,                // Index of the output being used
     pub signature: String,         // Signature for authorization
+    pub amount: u64
 }
 
 #[derive(Debug, Clone)]
@@ -78,9 +79,13 @@ impl TransactionManager {
 }
 
 impl TransactionBuilder {
-    pub fn add_input(&mut self, tx_id: &str, index: u32, amount: u64) -> TransactionInput {
+    pub fn add_input(&mut self, tx_id: &String, index: u32, amount: u64) -> TransactionInput {
         // Add an input to the transaction
-        todo!()
+        TransactionInput {
+            previous_tx_hash: tx_id.to_string(),
+            index,
+            amount
+        }
     }
 
     pub fn add_output(&mut self, recipient: &str, amount: u64) -> TransactionOutput {
