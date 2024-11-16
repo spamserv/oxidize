@@ -103,7 +103,7 @@ impl Blockchain {
             utxo,
             ledger,
             wallet
-        };
+        }
     }
 
     /// Returns blockchain configuration
