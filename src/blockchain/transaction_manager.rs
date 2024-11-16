@@ -40,6 +40,12 @@ pub enum TransactionStatus {
     Rejected,
 }
 
+pub enum TransactionType {
+    Coinbase, // For mining a new block, does not get put into UTXO
+    Fee, // For transaction fees
+    Regular // P2P
+}
+
 pub enum TransactionError {
     NotEnoughFunds,
 }

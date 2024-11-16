@@ -13,10 +13,8 @@ use thiserror::Error;
 
 // Modules/Crates
 use crate::helpers::HashHelper;
+use crate::config::{BLOCKCHAIN_INITIAL_DIFFICULTY, BLOCKCHAIN_INITIAL_NONCE};
 
-// Consts
-const BLOCKCHAIN_INITIAL_DIFFICULTY: u8 = 2;
-const BLOCKCHAIN_INITIAL_NONCE: u64 = 0;
 #[derive(Debug, Clone)]
 pub struct Blockchain {
     blocks: Vec<Block>,
