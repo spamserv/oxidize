@@ -72,11 +72,6 @@ impl Wallet {
             let child_priv_key = master_key.derive_private_key(hdwallet::KeyIndex::Normal(0)).unwrap();
             let child_pub_key = ExtendedPubKey::from_private_key(&child_priv_key);
     
-            // Debug and print
-            //dbg!("Master private key: ", master_key);
-            //dbg!("Child public key: ", &child_pub_key);
-            //println!("{}", mnemonic);
-    
             // Return the derived public key
             return Ok((child_pub_key.public_key, master_key.private_key));
         }
