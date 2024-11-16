@@ -5,15 +5,16 @@
 //! 
 use core::time;
 use std::{collections::HashMap, vec};
-use super::{wallet, Address, Transaction, TransactionInput, TransactionOutput, Wallet};
+use super::{wallet, Address, Transaction, TransactionInput, TransactionManager, TransactionOutput, Wallet};
 
 // Imports
 use chrono::Utc;
+use colored::Colorize;
 use thiserror::Error;
 
 // Modules/Crates
 use crate::helpers::HashHelper;
-use crate::config::{BLOCKCHAIN_INITIAL_DIFFICULTY, BLOCKCHAIN_INITIAL_NONCE};
+use crate::config::{BLOCKCHAIN_COINBASE_FEE, BLOCKCHAIN_INITIAL_DIFFICULTY, BLOCKCHAIN_INITIAL_NONCE};
 
 #[derive(Debug, Clone)]
 pub struct Blockchain {
@@ -77,23 +78,32 @@ impl Blockchain {
         let config = BlockchainConfig {
             difficulty: BLOCKCHAIN_INITIAL_DIFFICULTY
         };
-        let genesis_block = Block::create_genesis_block();
+
+        let mut wallet = Wallet::new("MiningFeeWallet#1".to_string());
+        wallet.create_new_account();
+        let coinbase_account = wallet.accounts()
+            .get(0)
+            .expect("No coinbase error available.");
+
+        let coinbase_address = coinbase_account.address();
+
+        let coinbase_transaction = TransactionManager::create_coinbase_transaction(&coinbase_address.id(), BLOCKCHAIN_COINBASE_FEE);
+
+        let genesis_block = Block::create_genesis_block(coinbase_transaction);
+
         let blocks = vec![genesis_block];
         let mempool  = vec![];
         let utxo = vec![];
         let ledger = vec![];
-        let mut wallet = Wallet::new("Wallet#1".to_string());
         
-        wallet.create_new_account();
-
-        return Self {
+        Self {
             blocks,
             config,
             mempool,
             utxo,
             ledger,
             wallet
-        }
+        };
     }
 
     /// Returns blockchain configuration
@@ -237,6 +247,23 @@ impl Blockchain {
         self.blocks.clone()
     }
 
+    fn reward_block_finder(&mut self, block: &Block) {
+        let coinbase_transaction = block.body()
+            .transactions()
+            .get(0)
+            .expect(&"No (coinbase) Transactions in the Transactions vector of a Block.".red())
+            .clone();
+
+        let coinbase_transaction_output = coinbase_transaction
+            .outputs()
+            .get(0)
+            .expect(&"No (coinbase) TransactionOutput in the TransactionOutputs vector.".red())
+            .clone();
+
+        self.ledger.push(coinbase_transaction);
+        self.utxo.push(coinbase_transaction_output);
+    }
+
 
 }
 
@@ -269,10 +296,10 @@ impl Block {
     /// - blockchain difficulty
     /// - transactions (empty)
     /// - nonce that is iterated until the blockchain difficulty is met
-    pub fn create_genesis_block() -> Self {
+    pub fn create_genesis_block(coinbase_transaction: Transaction) -> Self {
         let previous_hash = "0".repeat(64);
         let timestamp = Utc::now().to_rfc3339();
-        let transactions = Vec::new();
+        let mut transactions = Vec::new();
         let mut nonce = BLOCKCHAIN_INITIAL_NONCE;
         let mut hash_result = String::new();
         let blockchain_difficulty_str = "0".repeat(BLOCKCHAIN_INITIAL_DIFFICULTY as usize);
@@ -284,6 +311,8 @@ impl Block {
             }
             nonce += 1
         }
+
+        transactions.push(coinbase_transaction);
 
         let header = BlockHeader {
             previous_hash: previous_hash.to_string(),
@@ -340,6 +369,7 @@ impl Block {
             body
         }
     }
+
 }
 
 /// BlockHeader structure

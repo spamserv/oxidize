@@ -84,6 +84,10 @@ impl Wallet {
         // If the master key creation failed, return an error
         Err("Cannot create master key from seed!".to_string())
     }
+
+    pub fn accounts(&self) -> &Vec<Account> {
+        &self.accounts
+    }
 }
 
 impl Account {
@@ -116,5 +120,9 @@ impl Account {
 
     pub fn get_balance() -> u64 {
         todo!()
+    }
+
+    pub fn address(&self) -> &Address {
+        &self.address
     }
 }

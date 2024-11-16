@@ -15,6 +15,12 @@ pub struct Transaction {
     metadata: TransactionMetadata,
 }
 
+impl Transaction {
+    pub fn outputs(&self) -> &Vec<TransactionOutput> {
+        &self.outputs
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct TransactionInput {
     pub previous_tx_hash: String,  // Hash of the previous transaction
@@ -53,22 +59,21 @@ pub enum TransactionError {
     NotEnoughFunds,
 }
 
-struct TransactionManager {}
+pub struct TransactionManager {}
 
 struct TransactionBuilder {}
 
-struct Signer {
-    
-}
+struct Signer {}
 
 impl TransactionManager {
     pub fn create_transaction(&self, recipient: &String, amount: u64) -> Transaction {
         todo!()
     }
-    pub fn create_coinbase_transaction(&self, recipient: &String, amount: u64) -> Transaction {
+    
+    pub fn create_coinbase_transaction(recipient: &String, amount: u64) -> Transaction {
         let inputs = vec![];
         let transaction_output = TransactionOutput{
-            amount: BLOCKCHAIN_COINBASE_FEE as u64,
+            amount: BLOCKCHAIN_COINBASE_FEE,
             recipient_address: recipient.to_string(),
         };
         let outputs = vec![transaction_output];
