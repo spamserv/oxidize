@@ -13,7 +13,7 @@ use bip39::{Mnemonic, Language};
 use super::{Transaction, Address};
 
 /// Wallet struct, used for storing accounts and key pair
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Wallet {
     id: String, // Derived from public key
     name: String,
@@ -24,7 +24,7 @@ pub struct Wallet {
 }
 
 /// Account struct, used to store transaction history, address.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Account {
     address: Address,
     created_at: String,
@@ -38,6 +38,7 @@ impl Wallet {
         let accounts = vec![];
         let (public_key, private_key) = Wallet::generate_key_pair().unwrap();
         let id = "".to_string();
+        
         Self {
             id,
             public_key,

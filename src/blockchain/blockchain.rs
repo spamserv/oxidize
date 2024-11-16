@@ -5,7 +5,7 @@
 //! 
 use core::time;
 use std::{collections::HashMap, vec};
-use super::{Address, Transaction, TransactionInput, TransactionOutput};
+use super::{wallet, Address, Transaction, TransactionInput, TransactionOutput, Wallet};
 
 // Imports
 use chrono::Utc;
@@ -17,11 +17,12 @@ use crate::config::{BLOCKCHAIN_INITIAL_DIFFICULTY, BLOCKCHAIN_INITIAL_NONCE};
 
 #[derive(Debug, Clone)]
 pub struct Blockchain {
-    blocks: Vec<Block>,
-    mempool: Vec<TransactionInput>,
-    addresses: Vec<Address>,
-    utxo: Vec<TransactionOutput>,
-    config: BlockchainConfig
+    blocks: Vec<Block>, // Mined blocks
+    mempool: Vec<TransactionInput>, // Pending transactions
+    utxo: Vec<TransactionOutput>, // Unspent transaction outputs used for inputs into other transactions
+    ledger: Vec<Transaction>, // The blockchain ledger keeps track of every transaction and the issuance of new coins through coinbase transactions.
+    config: BlockchainConfig,
+    wallet: Wallet, // Mining wallet to collect coinbase block fees
 }
 
 #[derive(Debug, Clone)]
@@ -80,14 +81,18 @@ impl Blockchain {
         let blocks = vec![genesis_block];
         let mempool  = vec![];
         let utxo = vec![];
-        let addresses = vec![];
+        let ledger = vec![];
+        let mut wallet = Wallet::new("Wallet#1".to_string());
+        
+        wallet.create_new_account();
 
         return Self {
             blocks,
             config,
             mempool,
             utxo,
-            addresses
+            ledger,
+            wallet
         }
     }
 
