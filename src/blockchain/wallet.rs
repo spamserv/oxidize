@@ -113,4 +113,8 @@ impl Account {
         let hash_result = format!("{:x}", hash_result);
         hash_result
     }
+
+    pub fn get_balance() -> u64 {
+        todo!()
+    }
 }

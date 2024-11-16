@@ -27,6 +27,7 @@ Here is the current state of the blockchain:
 
 #### 2. Mine Fee
 - [ ] Send mining fee for each new block mined to Node's wallet
+- [ ] UTXO maturity period for newly created coinbase mining fee
 
 #### 3. Faucets
 - [ ] Distribute small amounts of cryptocurrencies for free to help users start interacting, e.g. when a Node joins for the first time.
