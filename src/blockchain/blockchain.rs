@@ -266,16 +266,22 @@ impl Blockchain {
 
         let recipient_address = coinbase_transaction_output.recipient_address.to_string();
 
-        // Push the whole transaction to ledger
-        self.ledger.push(coinbase_transaction);
+        self.push_transaction_to_ledger(coinbase_transaction);
 
-        // Update UTXO hash map for that address with a new transaction output
-        self.utxo.entry(recipient_address)
-            .or_default()
-            .push(coinbase_transaction_output);
+        self.update_utxo_with_transaction(recipient_address, coinbase_transaction_output);
     }
 
+    /// Push the whole transaction to ledger
+    fn push_transaction_to_ledger(&mut self, transaction: Transaction) {
+        self.ledger.push(transaction);
+    }
 
+    /// Update UTXO hash map for that address with a new transaction output
+    fn update_utxo_with_transaction(&mut self, address: String, transaction_output: TransactionOutput) {
+        self.utxo.entry(address)
+            .or_default()
+            .push(transaction_output);
+    }
 }
 
 impl Block {
