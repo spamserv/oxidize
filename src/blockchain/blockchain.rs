@@ -6,7 +6,7 @@
 
 
 use std::{collections::HashMap, vec};
-use crate::blockchain::transaction_manager::{Transaction, TransactionInput, TransactionManager, TransactionOutput};
+use crate::transaction::{Transaction, TransactionInput, TransactionManager, TransactionOutput};
 use crate::wallet::Wallet;
 // Imports
 use chrono::Utc;

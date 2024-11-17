@@ -3,7 +3,8 @@
 //! such as generating new hashes and validating block hashes
 use sha2::{Digest, Sha256};
 
-use crate::blockchain::{Block, Transaction, TransactionInput, TransactionOutput, TransactionStatus};
+use crate::blockchain::Block;
+use crate::transaction::{Transaction, TransactionInput, TransactionOutput, TransactionStatus};
 
 /// HashHelper struct storing various helper methods related to hashing
 pub struct HashHelper;

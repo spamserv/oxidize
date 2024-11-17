@@ -8,7 +8,7 @@ use sha2::{Digest, Sha256};
 use chrono::Utc;
 use bip39::{Mnemonic, Language};
 
-use crate::blockchain::Transaction;
+use crate::transaction::Transaction;
 use super::Address;
 
 /// Wallet struct, used for storing accounts and key pair

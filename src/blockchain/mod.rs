@@ -10,8 +10,6 @@
 
 mod blockchain;
 mod blockchain_listener;
-mod transaction_manager;
 
 pub use blockchain::*;
 pub use blockchain_listener::*;
-pub use transaction_manager::*;
