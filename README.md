@@ -26,7 +26,7 @@ Here is the current state of the blockchain:
 - [ ] Initial Coin Offering (ICO) - issuing / selling tokens to early adopters
 
 #### 2. Mine Fee
-- [ ] Send mining fee for each new block mined to Node's wallet
+- [x] Send mining fee for each new block mined to Node's wallet
 - [ ] UTXO maturity period for newly created coinbase mining fee
 
 #### 3. Faucets
