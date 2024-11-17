@@ -52,6 +52,7 @@ Here is the current state of the blockchain:
 - [ ] Implement send of value functionality
 
 #### 5. Networking and Node Communication
+- [ ] Build TCP client/server communication for wallet and node communication.
 - [ ] Build a peer-to-peer (P2P) network for node communication.
 - [ ] Implement block and transaction propagation among nodes.
 - [ ] Develop synchronization for consistent blockchain copies across nodes.
@@ -65,7 +66,7 @@ Here is the current state of the blockchain:
 
 #### 7. Block Mining
 - [ ] Mine a block based on a condition, e.g. block is minimum 70% of its limit
-- [ ] Add block mining fee
+- [x] Add block mining fee
 
 #### 8. Blockchain State Management
 - [ ] Design a system to track user balances and UTXOs.
