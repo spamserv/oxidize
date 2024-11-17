@@ -6,7 +6,7 @@
 
 use chrono::Utc;
 
-use crate::{config::BLOCKCHAIN_COINBASE_FEE, helpers::TransactionHelper};
+use crate::{helpers::TransactionHelper};
 
 #[derive(Debug, Clone)]
 pub struct Transaction {
@@ -75,7 +75,7 @@ impl TransactionManager {
     pub fn create_coinbase_transaction(recipient: &String, amount: u64) -> Transaction {
         let inputs = vec![];
         let transaction_output = TransactionOutput{
-            amount: BLOCKCHAIN_COINBASE_FEE,
+            amount,
             recipient_address: recipient.to_string(),
         };
         let outputs = vec![transaction_output];

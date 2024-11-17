@@ -14,7 +14,7 @@ use thiserror::Error;
 
 // Modules/Crates
 use crate::helpers::HashHelper;
-use crate::config::{BLOCKCHAIN_COINBASE_FEE, BLOCKCHAIN_INITIAL_DIFFICULTY, BLOCKCHAIN_INITIAL_NONCE};
+use crate::config::{BLOCKCHAIN_COINBASE_BLOCK_FEE, BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE, BLOCKCHAIN_INITIAL_DIFFICULTY, BLOCKCHAIN_INITIAL_NONCE};
 
 #[derive(Debug, Clone)]
 pub struct Blockchain {
@@ -87,7 +87,7 @@ impl Blockchain {
 
         let coinbase_address = coinbase_account.address();
 
-        let coinbase_transaction = TransactionManager::create_coinbase_transaction(&coinbase_address.id(), BLOCKCHAIN_COINBASE_FEE);
+        let coinbase_transaction = TransactionManager::create_coinbase_transaction(&coinbase_address.id(), BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE);
 
         let genesis_block = Block::create_genesis_block(coinbase_transaction);
 
@@ -119,8 +119,20 @@ impl Blockchain {
     /// Based on the previous block hash and transactions that will go inside the block
     pub fn add_block(&mut self){
         let last_block_header = &self.blocks.last().unwrap().header;
-        let new_block = Block::new(&last_block_header.current_hash, &vec![], last_block_header.difficulty);
-        self.blocks.push(new_block);
+
+        let coinbase_account = self.wallet.accounts()
+            .get(0)
+            .expect("No coinbase error available.");
+        let coinbase_address = coinbase_account.address();
+        let coinbase_transaction = TransactionManager::create_coinbase_transaction(&coinbase_address.id(), BLOCKCHAIN_COINBASE_BLOCK_FEE);
+
+
+        // Get all transactions for the block
+        let transactions = vec![coinbase_transaction];
+        let new_block = Block::new(&last_block_header.current_hash, &transactions, last_block_header.difficulty);
+        
+        self.reward_block_finder(&new_block);
+        self.push_new_block(new_block);
     }
 
     /// Validates a single block by checking several factors
@@ -281,6 +293,11 @@ impl Blockchain {
         self.utxo.entry(address)
             .or_default()
             .push(transaction_output);
+    }
+
+    /// Push newly mined block to the blocks vector of a blockchain
+    fn push_new_block(&mut self, block: Block) {
+        self.blocks.push(block);
     }
 }
 
