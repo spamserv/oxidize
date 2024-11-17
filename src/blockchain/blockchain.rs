@@ -91,19 +91,23 @@ impl Blockchain {
 
         let genesis_block = Block::create_genesis_block(coinbase_transaction);
 
-        let blocks = vec![genesis_block];
+        let blocks = vec![genesis_block.clone()]; // Clone it because it has to be borrowed to reward_block_finder
         let mempool  = vec![];
         let utxo = vec![];
         let ledger = vec![];
         
-        Self {
+        let mut blockchain = Self {
             blocks,
             config,
             mempool,
             utxo,
             ledger,
             wallet
-        }
+        };
+
+        blockchain.reward_block_finder(&genesis_block);
+
+        blockchain
     }
 
     /// Returns blockchain configuration

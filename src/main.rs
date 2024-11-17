@@ -6,7 +6,7 @@ use blockchain::*;
 
 use colored::Colorize;
 
-const NUMBER_OF_BLOCKS: u16 = 12;
+const NUMBER_OF_BLOCKS: u16 = 4;
 
 fn main() {
     println!("Hello, world!");
@@ -21,10 +21,10 @@ fn main() {
     }
 
     let blocks = node.blocks().clone(); 
-    let third_block = blocks.get(2).unwrap().clone();
-    let seventh_block = blocks.get(6).unwrap().clone();
-    match node.validate_single_block(third_block.header().current_hash()) {
-        Err(e) => println!("Error on validating the block {} with error {}", third_block.header().current_hash(), e),
+    let block_1 = blocks.get(1).unwrap().clone();
+    let block_2 = blocks.get(3).unwrap().clone();
+    match node.validate_single_block(block_1.header().current_hash()) {
+        Err(e) => println!("Error on validating the block {} with error {}", block_1.header().current_hash(), e),
         Ok(_) => println!("{}", "Block validated".bold().green())
     }
 
@@ -33,12 +33,12 @@ fn main() {
         Ok(_) => println!("{}", "Full chain validated".bold().green())
     }
 
-    match node.validate_range_chain(third_block.header().current_hash(), seventh_block.header().current_hash()) {
+    match node.validate_range_chain(block_1.header().current_hash(), block_2.header().current_hash()) {
         Err(e) => println!("Error validating chain range with error {}", e),
         Ok(_) => println!("{} from: {} to {}", 
             "Chain range validated".bold().green(), 
-            third_block.header().current_hash().yellow(), 
-            seventh_block.header().current_hash().yellow()
+            block_1.header().current_hash().yellow(), 
+            block_2.header().current_hash().yellow()
         )
     }
 
@@ -52,6 +52,6 @@ fn main() {
     wallet2.create_new_account();
 
     dbg!(node);
-    dbg!(wallet1);
-    dbg!(wallet2);
+    //dbg!(wallet1);
+    //dbg!(wallet2);
 }

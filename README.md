@@ -22,7 +22,7 @@ Here is the current state of the blockchain:
 - [ ] Develop a staking mechanism for PoS, if chosen.
 
 #### 1.1 Initial supply
-- [ ] Pre-mining / Developer fund - creator gets the initial set of coins to himself for development
+- [x] Pre-mining / Developer fund - creator gets the initial set of coins to himself for development
 - [ ] Initial Coin Offering (ICO) - issuing / selling tokens to early adopters
 
 #### 2. Mine Fee

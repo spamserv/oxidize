@@ -39,7 +39,8 @@ pub struct TransactionOutput {
 struct TransactionMetadata {
     transaction_id: String,
     timestamp: String,
-    status: TransactionStatus
+    status: TransactionStatus, 
+    r#type: TransactionType
 }
 
 #[derive(Debug, Clone)]
@@ -49,6 +50,7 @@ pub enum TransactionStatus {
     Rejected,
 }
 
+#[derive(Debug, Clone)]
 pub enum TransactionType {
     Coinbase, // For mining a new block, does not get put into UTXO
     Fee, // For transaction fees
@@ -82,11 +84,13 @@ impl TransactionManager {
         let status = TransactionStatus::Pending;
 
         let transaction_id = TransactionHelper::generate_transaction_id(&inputs, &outputs, &timestamp, &status);
+        let r#type = TransactionType::Coinbase;
 
         let metadata = TransactionMetadata {
             timestamp,
             status,
-            transaction_id
+            transaction_id,
+            r#type
         };
 
         Transaction {
