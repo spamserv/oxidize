@@ -3,14 +3,13 @@
 //! - account creation
 //! - address generation and validation
 
-use std::ops::Add;
-
 use hdwallet::{secp256k1::{PublicKey, SecretKey}, ExtendedPrivKey, ExtendedPubKey};
 use sha2::{Digest, Sha256};
 use chrono::Utc;
 use bip39::{Mnemonic, Language};
 
-use super::{Transaction, Address};
+use crate::blockchain::Transaction;
+use super::Address;
 
 /// Wallet struct, used for storing accounts and key pair
 #[derive(Debug, Clone)]

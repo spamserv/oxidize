@@ -9,11 +9,9 @@
 //! - [`blockchain`]: For blockchain data structure and logic
 
 mod blockchain;
-mod address;
-mod wallet;
+mod blockchain_listener;
 mod transaction_manager;
 
 pub use blockchain::*;
-pub use address::*;
-pub use wallet::*;
+pub use blockchain_listener::*;
 pub use transaction_manager::*;

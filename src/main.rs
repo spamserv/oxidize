@@ -1,10 +1,5 @@
-mod blockchain;
-mod helpers;
-mod config;
-
-use blockchain::*;
-
 use colored::Colorize;
+use oxidize::{blockchain::Blockchain, wallet::Wallet};
 
 const NUMBER_OF_BLOCKS: u16 = 4;
 

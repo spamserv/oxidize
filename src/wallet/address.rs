@@ -1,4 +1,4 @@
-use super::Transaction;
+use crate::blockchain::Transaction;
 
 #[derive(Debug, Clone)]
 pub struct Address {

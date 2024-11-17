@@ -3,10 +3,11 @@
 //! It defines the structure of the blockchain, how blocks are created, and
 //! the validation of transactions within the blockchain.
 //! 
-use core::time;
-use std::{collections::HashMap, vec};
-use super::{wallet, Address, Transaction, TransactionInput, TransactionManager, TransactionOutput, Wallet};
 
+
+use std::{collections::HashMap, vec};
+use crate::blockchain::transaction_manager::{Transaction, TransactionInput, TransactionManager, TransactionOutput};
+use crate::wallet::Wallet;
 // Imports
 use chrono::Utc;
 use colored::Colorize;
@@ -125,7 +126,6 @@ impl Blockchain {
             .expect("No coinbase error available.");
         let coinbase_address = coinbase_account.address();
         let coinbase_transaction = TransactionManager::create_coinbase_transaction(&coinbase_address.id(), BLOCKCHAIN_COINBASE_BLOCK_FEE);
-
 
         // Get all transactions for the block
         let transactions = vec![coinbase_transaction];
