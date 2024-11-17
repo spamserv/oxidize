@@ -20,7 +20,7 @@ use crate::config::{BLOCKCHAIN_COINBASE_FEE, BLOCKCHAIN_INITIAL_DIFFICULTY, BLOC
 pub struct Blockchain {
     blocks: Vec<Block>, // Mined blocks
     mempool: Vec<TransactionInput>, // Pending transactions
-    utxo: Vec<TransactionOutput>, // Unspent transaction outputs used for inputs into other transactions
+    utxo: HashMap<String, Vec<TransactionOutput>>, // Unspent transaction outputs used for inputs into other transactions
     ledger: Vec<Transaction>, // The blockchain ledger keeps track of every transaction and the issuance of new coins through coinbase transactions.
     config: BlockchainConfig,
     wallet: Wallet, // Mining wallet to collect coinbase block fees
@@ -93,7 +93,7 @@ impl Blockchain {
 
         let blocks = vec![genesis_block.clone()]; // Clone it because it has to be borrowed to reward_block_finder
         let mempool  = vec![];
-        let utxo = vec![];
+        let utxo = HashMap::new();
         let ledger = vec![];
         
         let mut blockchain = Self {
@@ -264,8 +264,15 @@ impl Blockchain {
             .expect(&"No (coinbase) TransactionOutput in the TransactionOutputs vector.".red())
             .clone();
 
+        let recipient_address = coinbase_transaction_output.recipient_address.to_string();
+
+        // Push the whole transaction to ledger
         self.ledger.push(coinbase_transaction);
-        self.utxo.push(coinbase_transaction_output);
+
+        // Update UTXO hash map for that address with a new transaction output
+        self.utxo.entry(recipient_address)
+            .or_default()
+            .push(coinbase_transaction_output);
     }
 
 
