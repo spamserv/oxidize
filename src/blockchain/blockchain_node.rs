@@ -15,7 +15,7 @@ use thiserror::Error;
 
 // Modules/Crates
 use crate::{
-    helpers::HashHelper, 
+    utils::HashHelper, 
     config::{BLOCKCHAIN_COINBASE_BLOCK_FEE, BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE, BLOCKCHAIN_INITIAL_DIFFICULTY, BLOCKCHAIN_INITIAL_NONCE
     }};
 

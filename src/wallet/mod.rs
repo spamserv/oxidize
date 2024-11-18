@@ -1,5 +1,5 @@
-pub mod wallet;
+pub mod crypto_wallet;
 pub mod address;
 
-pub use wallet::{Wallet, Account};
+pub use crypto_wallet::{Wallet, Account};
 pub use address::Address;

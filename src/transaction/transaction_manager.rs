@@ -6,7 +6,7 @@
 
 use chrono::Utc;
 
-use crate::{helpers::TransactionHelper};
+use crate::{utils::TransactionHelper};
 
 #[derive(Debug, Clone)]
 pub struct Transaction {

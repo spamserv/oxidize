@@ -1,10 +1,10 @@
 //! This module handles:
-//! - HashHelper functions to help with all hash related things, 
-//!  such as generating new hashes and validating block hashes
+//! - HashHelper functions to help with all hash related things, such as generating new hashes and validating block hashes
+
 use sha2::{Digest, Sha256};
 
 use crate::blockchain::Block;
-use crate::transaction::{Transaction, TransactionInput, TransactionOutput, TransactionStatus};
+use crate::transaction::Transaction;
 
 /// HashHelper struct storing various helper methods related to hashing
 pub struct HashHelper;
@@ -28,16 +28,4 @@ impl HashHelper {
     }
 }
 
-pub struct TransactionHelper {}
-
-impl TransactionHelper {
-    pub fn generate_transaction_id(inputs: &Vec<TransactionInput>, outputs: &Vec<TransactionOutput>, timestamp: &String, status: &TransactionStatus) -> String {
-        let combined_string = format!("{:?}{:?}{}{:?}", inputs, outputs, timestamp, status);
-        let mut hasher = Sha256::new();
-        hasher.update(combined_string);
-        let transaction_id = hasher.finalize();
-        let transaction_id = format!("{:x}", transaction_id);
-        transaction_id
-    }
-}
 

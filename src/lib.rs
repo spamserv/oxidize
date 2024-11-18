@@ -1,5 +1,5 @@
 pub mod blockchain;
-pub mod helpers;
+pub mod utils;
 pub mod config;
 pub mod wallet;
 pub mod transaction;
