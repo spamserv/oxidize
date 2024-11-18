@@ -90,7 +90,7 @@ impl Account {
         let created_at = Utc::now().to_rfc3339();
         //let address = Self::generate_address(&public_key);
         let address = Address {
-            id: Self::generate_address(&public_key),
+            id: Self::generate_address(public_key),
             transactions: vec![],
         };
         let transaction_history = vec![];

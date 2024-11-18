@@ -1,6 +1,6 @@
 //! This module handles:
 //! - HashHelper functions to help with all hash related things, 
-//! such as generating new hashes and validating block hashes
+//!  such as generating new hashes and validating block hashes
 use sha2::{Digest, Sha256};
 
 use crate::blockchain::Block;

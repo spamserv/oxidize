@@ -14,8 +14,10 @@ use colored::Colorize;
 use thiserror::Error;
 
 // Modules/Crates
-use crate::helpers::HashHelper;
-use crate::config::{BLOCKCHAIN_COINBASE_BLOCK_FEE, BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE, BLOCKCHAIN_INITIAL_DIFFICULTY, BLOCKCHAIN_INITIAL_NONCE};
+use crate::{
+    helpers::HashHelper, 
+    config::{BLOCKCHAIN_COINBASE_BLOCK_FEE, BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE, BLOCKCHAIN_INITIAL_DIFFICULTY, BLOCKCHAIN_INITIAL_NONCE
+    }};
 
 #[derive(Debug, Clone)]
 pub struct Blockchain {
@@ -83,12 +85,12 @@ impl Blockchain {
         let mut wallet = Wallet::new("MiningFeeWallet#1".to_string());
         wallet.create_new_account();
         let coinbase_account = wallet.accounts()
-            .get(0)
+            .first()
             .expect("No coinbase error available.");
 
         let coinbase_address = coinbase_account.address();
 
-        let coinbase_transaction = TransactionManager::create_coinbase_transaction(&coinbase_address.id(), BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE);
+        let coinbase_transaction = TransactionManager::create_coinbase_transaction(coinbase_address.id(), BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE);
 
         let genesis_block = Block::create_genesis_block(coinbase_transaction);
 
@@ -122,10 +124,10 @@ impl Blockchain {
         let last_block_header = &self.blocks.last().unwrap().header;
 
         let coinbase_account = self.wallet.accounts()
-            .get(0)
+            .first()
             .expect("No coinbase error available.");
         let coinbase_address = coinbase_account.address();
-        let coinbase_transaction = TransactionManager::create_coinbase_transaction(&coinbase_address.id(), BLOCKCHAIN_COINBASE_BLOCK_FEE);
+        let coinbase_transaction = TransactionManager::create_coinbase_transaction(coinbase_address.id(), BLOCKCHAIN_COINBASE_BLOCK_FEE);
 
         // Get all transactions for the block
         let transactions = vec![coinbase_transaction];
@@ -147,7 +149,7 @@ impl Blockchain {
             return Err(BlockValidationError::InsufficientBlocks)
         }
 
-        if !HashHelper::is_valid_hash(&block) {
+        if !HashHelper::is_valid_hash(block) {
             return Err(BlockValidationError::InvalidHash)
         }
 
@@ -176,7 +178,7 @@ impl Blockchain {
         }
 
         for (idx, block) in self.blocks.iter().enumerate() {
-            if !HashHelper::is_valid_hash(&block) {
+            if !HashHelper::is_valid_hash(block) {
                 return Err(BlockValidationError::InvalidHash)
             }
             
@@ -200,7 +202,7 @@ impl Blockchain {
 
     /// Validates a range between `from_hash` and `to_hash`
     /// Returns a Result<(), BlockValidationError>
-    pub fn validate_range_chain(&mut self, from_hash: &String, to_hash: &String) -> Result<(), BlockValidationError> {
+    pub fn validate_range_chain(&mut self, from_hash: &str, to_hash: &str) -> Result<(), BlockValidationError> {
         let (from_index, to_index) = match self.find_hash_indices(from_hash, to_hash) {
             None => return Err(BlockValidationError::RangeIndexFault),
             Some((from_index, to_index)) => (from_index, to_index),
@@ -216,7 +218,7 @@ impl Blockchain {
                 .get(idx)
                 .ok_or(BlockValidationError::BlockNotFound)?;
     
-            if !HashHelper::is_valid_hash(&block) {
+            if !HashHelper::is_valid_hash(block) {
                 return Err(BlockValidationError::InvalidHash)
             }
             
@@ -266,14 +268,18 @@ impl Blockchain {
     fn reward_block_finder(&mut self, block: &Block) {
         let coinbase_transaction = block.body()
             .transactions()
-            .get(0)
-            .expect(&"No (coinbase) Transactions in the Transactions vector of a Block.".red())
+            .first()
+            .unwrap_or_else( ||  { 
+                panic!("{}", "No (coinbase) Transactions in the Transactions vector of a Block.".red().to_string()) 
+            })
             .clone();
 
         let coinbase_transaction_output = coinbase_transaction
             .outputs()
-            .get(0)
-            .expect(&"No (coinbase) TransactionOutput in the TransactionOutputs vector.".red())
+            .first()
+            .unwrap_or_else( ||  { 
+                panic!("{}", "No (coinbase) TransactionOutput in the TransactionOutputs vector.".red().to_string())
+            })
             .clone();
 
         let recipient_address = coinbase_transaction_output.recipient_address.to_string();
@@ -305,13 +311,7 @@ impl Block {
     /// Generates a new block based on previous block hash, transactions that are meant to go into the block
     /// and current blockchain difficulty 
     fn new(previous_hash: &String, transactions: &Vec<Transaction>, blockchain_difficulty: u8) -> Self {
-        if transactions.is_empty() {
-            let genesis_block = Block::create_data_block(previous_hash, transactions, blockchain_difficulty);
-            genesis_block
-        } else {
-            let genesis_block = Block::create_data_block(previous_hash, transactions, blockchain_difficulty);
-            genesis_block
-        }
+        Block::create_data_block(previous_hash, transactions, blockchain_difficulty)
     }
 
     /// Returns BlockHeader
@@ -335,7 +335,7 @@ impl Block {
         let timestamp = Utc::now().to_rfc3339();
         let mut transactions = Vec::new();
         let mut nonce = BLOCKCHAIN_INITIAL_NONCE;
-        let mut hash_result = String::new();
+        let mut hash_result;
         let blockchain_difficulty_str = "0".repeat(BLOCKCHAIN_INITIAL_DIFFICULTY as usize);
         
         loop {
@@ -375,11 +375,11 @@ impl Block {
     pub fn create_data_block(previous_hash: &String, transactions: &Vec<Transaction>, blockchain_difficulty: u8) -> Self {
         let timestamp = Utc::now().to_rfc3339();
         let mut nonce = BLOCKCHAIN_INITIAL_NONCE;
-        let mut hash_result = String::new();
+        let mut hash_result;
         let blockchain_difficulty_str = "0".repeat(blockchain_difficulty as usize);
         
         loop {
-            hash_result = HashHelper::generate_hash(&previous_hash, blockchain_difficulty, &timestamp, &transactions, nonce);
+            hash_result = HashHelper::generate_hash(previous_hash, blockchain_difficulty, &timestamp, transactions, nonce);
             if hash_result.starts_with(&blockchain_difficulty_str) {
                 break;
             }

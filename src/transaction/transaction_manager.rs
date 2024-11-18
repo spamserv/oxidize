@@ -68,11 +68,11 @@ struct TransactionBuilder {}
 struct Signer {}
 
 impl TransactionManager {
-    pub fn create_transaction(&self, recipient: &String, amount: u64) -> Transaction {
+    pub fn create_transaction(&self, recipient: &str, amount: u64) -> Transaction {
         todo!()
     }
     
-    pub fn create_coinbase_transaction(recipient: &String, amount: u64) -> Transaction {
+    pub fn create_coinbase_transaction(recipient: &str, amount: u64) -> Transaction {
         let inputs = vec![];
         let transaction_output = TransactionOutput{
             amount,
@@ -122,7 +122,7 @@ impl TransactionManager {
 }
 
 impl TransactionBuilder {
-    pub fn add_input(&mut self, tx_id: &String, index: u32, amount: u64) -> TransactionInput {
+    pub fn add_input(&mut self, tx_id: &str, index: u32, amount: u64) -> TransactionInput {
         // Add an input to the transaction
         todo!()
     }
