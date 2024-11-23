@@ -52,4 +52,7 @@ async fn main() {
     dbg!(wallet1);
     dbg!(wallet2);
 
+    loop {
+        // DO STUFF
+    }
 }
