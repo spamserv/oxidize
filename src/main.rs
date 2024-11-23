@@ -19,6 +19,7 @@ async fn main() {
     let blocks = node.blocks().clone(); 
     let block_1 = blocks.get(1).unwrap().clone();
     let block_2 = blocks.get(3).unwrap().clone();
+
     match node.validate_single_block(block_1.header().current_hash()) {
         Err(e) => println!("Error on validating the block {} with error {}", block_1.header().current_hash(), e),
         Ok(_) => println!("{}", "Block validated".bold().green())
@@ -48,6 +49,7 @@ async fn main() {
     wallet2.create_new_account();
 
     dbg!(node);
-    //dbg!(wallet1);
-    //dbg!(wallet2);
+    dbg!(wallet1);
+    dbg!(wallet2);
+
 }

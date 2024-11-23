@@ -159,6 +159,7 @@ impl Blockchain {
         }
 
         if !HashHelper::is_valid_hash(block) {
+            println!("Block hash: {}", block.header.current_hash);
             return Err(BlockValidationError::InvalidHash)
         }
 
@@ -188,6 +189,7 @@ impl Blockchain {
 
         for (idx, block) in self.blocks.iter().enumerate() {
             if !HashHelper::is_valid_hash(block) {
+                println!("Failed on idx: {}, block hash: {}", idx, block.header.current_hash);
                 return Err(BlockValidationError::InvalidHash)
             }
             
@@ -228,6 +230,7 @@ impl Blockchain {
                 .ok_or(BlockValidationError::BlockNotFound)?;
     
             if !HashHelper::is_valid_hash(block) {
+                println!("Failed on idx: {}, block hash: {}", idx, block.header.current_hash);
                 return Err(BlockValidationError::InvalidHash)
             }
             
@@ -347,6 +350,8 @@ impl Block {
         let mut hash_result;
         let blockchain_difficulty_str = "0".repeat(BLOCKCHAIN_INITIAL_DIFFICULTY as usize);
         
+        transactions.push(coinbase_transaction);
+
         loop {
             hash_result = HashHelper::generate_hash(&previous_hash, BLOCKCHAIN_INITIAL_DIFFICULTY, &timestamp, &transactions, nonce);
             if hash_result.starts_with(&blockchain_difficulty_str) {
@@ -354,8 +359,6 @@ impl Block {
             }
             nonce += 1
         }
-
-        transactions.push(coinbase_transaction);
 
         let header = BlockHeader {
             previous_hash: previous_hash.to_string(),
