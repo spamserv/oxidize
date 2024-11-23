@@ -52,7 +52,7 @@ Here is the current state of the blockchain:
 - [ ] Implement send of value functionality
 
 #### 5. Networking and Node Communication
-- [ ] Build TCP client/server communication for wallet and node communication.
+- [x] Build TCP client/server communication for wallet and node communication.
 - [ ] Build a peer-to-peer (P2P) network for node communication.
 - [ ] Implement block and transaction propagation among nodes.
 - [ ] Develop synchronization for consistent blockchain copies across nodes.
