@@ -3,6 +3,8 @@
 //! - account creation
 //! - address generation and validation
 
+use std::error::Error;
+
 use hdwallet::{secp256k1::{PublicKey, SecretKey}, ExtendedPrivKey, ExtendedPubKey};
 use sha2::{Digest, Sha256};
 use chrono::Utc;
@@ -19,7 +21,8 @@ pub struct Wallet {
     created_at: String,
     accounts: Vec<Account>,
     public_key: PublicKey,
-    private_key: SecretKey, // Used for testing, idea is not to store it in the future
+    private_key: SecretKey,
+    ws: WalletWsClient // Used for testing, idea is not to store it in the future
 }
 
 /// Account struct, used to store transaction history, address.
@@ -32,22 +35,23 @@ pub struct Account {
 
 impl Wallet {
     /// Creates new wallet & generates key pair
-    pub fn new(name: String) -> Self {
+    pub async fn new(name: String) -> Result<Self, Box<dyn Error>> {
         let created_at = Utc::now().to_rfc3339();
         let accounts = vec![];
         let (public_key, private_key) = Wallet::generate_key_pair().unwrap();
         let id = "".to_string();
-
-        //let ws = WalletWsClient::new(WEBSOCKET_URI.to_string());
         
-        Self {
+        let ws = WalletWsClient::new(WEBSOCKET_URI.to_string()).await?;
+        
+        Ok(Self {
             id,
             public_key,
             private_key,
             created_at,
             accounts,
             name,
-        }
+            ws
+        })
     }
 
     /// Create new account for the wallet, based on the `public_key`

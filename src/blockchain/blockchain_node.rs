@@ -10,6 +10,7 @@ use std::{collections::HashMap, vec};
 use chrono::Utc;
 use colored::Colorize;
 use thiserror::Error;
+use std::error::Error;
 
 // Modules/Crates
 use crate::{
@@ -83,12 +84,16 @@ impl Blockchain {
     
     /// Builds a blockchain from scratch
     /// Creates genesis block based on the BLOCKCHAIN_INITIAL_DIFFICULTY
-    pub async fn build() -> Self {
+    pub async fn build() -> Result<Self, Box <dyn Error>> {
         let config = BlockchainConfig {
             difficulty: BLOCKCHAIN_INITIAL_DIFFICULTY
         };
 
-        let mut wallet = Wallet::new("MiningFeeWallet#1".to_string());
+        // Websocket server for wallets to connect
+        BlockchainListener::run(WEBSOCKET_URI.to_string()).await;
+
+        let mut wallet = Wallet::new("MiningFeeWallet#1".to_string()).await?;
+
         wallet.create_new_account();
         let coinbase_account = wallet.accounts()
             .first()
@@ -105,9 +110,6 @@ impl Blockchain {
         let utxo = HashMap::new();
         let ledger = vec![];
         
-        // Websocket server for wallets to connect
-        BlockchainListener::run(WEBSOCKET_URI.to_string()).await;
-        
         let mut blockchain = Self {
             blocks,
             config,
@@ -119,7 +121,7 @@ impl Blockchain {
 
         blockchain.reward_block_finder(&genesis_block);
 
-        blockchain
+        Ok(blockchain)
     }
 
     /// Returns blockchain configuration

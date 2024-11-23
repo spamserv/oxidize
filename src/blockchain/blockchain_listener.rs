@@ -90,14 +90,13 @@ impl BlockchainListener {
             }
         });
 
+        // tokio::spawn(async {
+        //     tokio::signal::ctrl_c().await.unwrap();
+        //     println!("Server stopped.");
+        // });
+
         // Continue with other tasks that need to run concurrently
         println!("Websocket initialized...");
-
-        // Keep the server running indefinitely
-        // tokio::signal::ctrl_c()
-        //     .await
-        //     .expect("Failed to listen for ctrl-c signal");
-        
     }
 
     async fn on_client_message(msg: String) {

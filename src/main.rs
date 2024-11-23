@@ -7,7 +7,9 @@ const NUMBER_OF_BLOCKS: u16 = 4;
 async fn main() {
     println!("Hello, world!");
 
-    let mut node = Blockchain::build().await;
+    let mut node = Blockchain::build()
+        .await
+        .expect("Cannot create blockchain.");
     println!("{}", "Initiated blockchain, with genesis block".bold().green());
     dbg!(node.config());
 
@@ -40,11 +42,16 @@ async fn main() {
     }
 
     println!("{}", "Creating 2 wallets".bold());
-    let mut wallet1 = Wallet::new("Wallet#1".to_string());
+    let mut wallet1 = Wallet::new("Wallet#1".to_string())
+        .await
+        .expect("Cannot create wallet.");
     wallet1.create_new_account();
     wallet1.create_new_account();
     
-    let mut wallet2 = Wallet::new("Wallet#2".to_string());
+    let mut wallet2 = Wallet::new("Wallet#2".to_string())
+        .await
+        .expect("Cannot create wallet.");
+
     wallet2.create_new_account();
     wallet2.create_new_account();
 
