@@ -83,7 +83,7 @@ impl Blockchain {
     
     /// Builds a blockchain from scratch
     /// Creates genesis block based on the BLOCKCHAIN_INITIAL_DIFFICULTY
-    pub fn build() -> Self {
+    pub async fn build() -> Self {
         let config = BlockchainConfig {
             difficulty: BLOCKCHAIN_INITIAL_DIFFICULTY
         };
@@ -106,7 +106,7 @@ impl Blockchain {
         let ledger = vec![];
         
         // Websocket server for wallets to connect
-        BlockchainListener::run(WEBSOCKET_URI.to_string());
+        BlockchainListener::run(WEBSOCKET_URI.to_string()).await;
         
         let mut blockchain = Self {
             blocks,

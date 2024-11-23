@@ -1,116 +1,107 @@
 use futures_util::{SinkExt, StreamExt};
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::broadcast;
+use tokio::net::TcpListener;
+use tokio::sync::mpsc;
 use tokio_tungstenite::{accept_async, tungstenite::protocol::Message};
 
-type SharedClients = Arc<Mutex<HashMap<String, tokio_tungstenite::WebSocketStream<TcpStream>>>>;
 
-#[derive(Debug)]
-struct WebSocketServer {
-    address: String,
-    clients: SharedClients,
+pub struct WebSocketServer {
+    clients: Arc<Mutex<Vec<mpsc::Sender<String>>>>,
 }
 
 impl WebSocketServer {
-    async fn run(&self, broadcast_tx: broadcast::Sender<String>) {
-        let listener = TcpListener::bind(&self.address)
-            .await
-            .expect("Failed to bind to address");
-        println!("WebSocket server running at ws://{}", self.address);
-
-        loop {
-            if let Ok((stream, addr)) = listener.accept().await {
-                let client_id = addr.to_string();
-                println!("New connection from {}", client_id);
-
-                let clients = Arc::clone(&self.clients);
-                let tx = broadcast_tx.clone();
-
-                tokio::spawn(async move {
-                    if let Err(e) = WebSocketServer::handle_connection(stream, client_id, clients, tx).await {
-                        eprintln!("Error handling connection: {}", e);
-                    }
-                });
-            }
+    pub fn new() -> Self {
+        Self {
+            clients: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
-    async fn handle_connection(
-        stream: TcpStream,
-        client_id: String,
-        clients: SharedClients,
-        broadcast_tx: broadcast::Sender<String>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let ws_stream = accept_async(stream).await?;
-        let (mut writer, mut reader) = ws_stream.split();
+    pub async fn run<F, Fut>(&self, addr: &str, on_client_message: F) -> Result<(), Box<dyn std::error::Error>>
+    where
+        F: Fn(String) -> Fut + Send + Sync + 'static,
+        Fut: std::future::Future<Output = ()> + Send + 'static,
+    {
+        let listener = TcpListener::bind(addr).await?;
+        println!("[Server] Listening on {}", addr);
 
-        // Add the client to the shared client list
-        // {
-        //     let mut clients_lock = clients.lock().unwrap();
-        //     clients_lock.insert(client_id.clone(), writer.reunite(reader)?);
-        // }
+        let on_client_message = Arc::new(on_client_message);
 
-        // Send a welcome message
-        let greeting = format!("Hi from server!");
-        writer.send(Message::Text(greeting)).await?;
+        // Main server loop to accept connections
+        while let Ok((stream, addr)) = listener.accept().await {
+            println!("[Server] New connection from: {}", addr);
+            let ws_stream = accept_async(stream).await?;
+            let (mut write, mut read) = ws_stream.split();
 
-        // Read messages from this client and broadcast them
-        while let Some(msg) = reader.next().await {
-            match msg {
-                Ok(Message::Text(text)) => {
-                    println!("Received from {}: {}", client_id, text);
-                    broadcast_tx.send(format!("{}: {}", client_id, text))?;
+            // Create a channel for sending messages to the client
+            let (tx, mut rx) = mpsc::channel(10);
+            self.clients.lock().unwrap().push(tx);
+
+            // Spawn a task to handle incoming messages from the client
+            let on_client_message = Arc::clone(&on_client_message);
+            tokio::spawn({
+                let on_client_message = Arc::clone(&on_client_message);
+                async move {
+                    while let Some(Ok(Message::Text(msg))) = read.next().await {
+                        println!("[Server] Received from {}: {}", addr, msg);
+                        (on_client_message)(msg).await;
+                    }
                 }
-                Ok(_) => {}
-                Err(e) => {
-                    eprintln!("Error with client {}: {}", client_id, e);
-                    break;
+            });
+
+            // Spawn a task to handle outgoing messages to the client
+            tokio::spawn(async move {
+                while let Some(msg) = rx.recv().await {
+                    if write.send(Message::Text(msg)).await.is_err() {
+                        break;
+                    }
                 }
-            }
+            });
         }
 
-        // Remove the client when it disconnects
-        {
-            let mut clients_lock = clients.lock().unwrap();
-            clients_lock.remove(&client_id);
-        }
-
-        println!("Client {} disconnected", client_id);
         Ok(())
     }
-}
 
-pub struct BlockchainListener { }
-
-impl BlockchainListener {
-    pub fn run(address: String) {
-    let server_address = address.to_string();
-
-    // Shared state for managing connected clients (TODO)
-    let clients: SharedClients = Arc::new(Mutex::new(HashMap::new()));
-
-    // Broadcast channel for sending messages to all clients
-    let (broadcast_tx, _broadcast_rx) = broadcast::channel(100);
-
-    // Start the WebSocket server
-    let server = WebSocketServer {
-        address: server_address.clone(),
-        clients: Arc::clone(&clients),
-    };
-
-    tokio::spawn(async move {
-        server.run(broadcast_tx).await;
-    });
-
-    println!("Server running. Connect any WebSocket client to ws://{}", server_address);
-    
-    // Keep the server running indefinitely
-    // tokio::signal::ctrl_c()
-    //     .await
-    //     .expect("Failed to listen for ctrl-c signal");
+    /// Broadcasts a message to all connected clients
+    pub async fn broadcast(&self, message: String) {
+        let mut clients = self.clients.lock().expect("Failed to lock clients list");
+        clients.retain(|tx| {
+            match tx.try_send(message.clone()) {
+                Ok(_) => true,  // Keep the client if sending succeeds
+                Err(_) => {
+                    println!("[Server] Removing a client due to failed message sending.");
+                    false // Remove the client if sending fails
+                }
+            }
+        });
     }
 }
 
+pub struct BlockchainListener {}
 
+impl BlockchainListener {
+    pub async fn run(address: String) {
+
+        let server = WebSocketServer::new();
+
+        // Run the WebSocket server as a separate task
+        tokio::spawn(async move {
+            if let Err(e) = server.run(&address, Self::on_client_message).await {
+                eprintln!("Error running server: {}", e);
+            }
+        });
+
+        // Continue with other tasks that need to run concurrently
+        println!("Websocket initialized...");
+
+        // Keep the server running indefinitely
+        // tokio::signal::ctrl_c()
+        //     .await
+        //     .expect("Failed to listen for ctrl-c signal");
+        
+    }
+
+    async fn on_client_message(msg: String) {
+        println!("Handling message: {}", msg);
+        // Process the message (e.g., log, respond, etc.)
+    }
+}

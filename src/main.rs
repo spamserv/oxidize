@@ -7,7 +7,7 @@ const NUMBER_OF_BLOCKS: u16 = 4;
 async fn main() {
     println!("Hello, world!");
 
-    let mut node = Blockchain::build();
+    let mut node = Blockchain::build().await;
     println!("{}", "Initiated blockchain, with genesis block".bold().green());
     dbg!(node.config());
 

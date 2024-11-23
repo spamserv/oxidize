@@ -3,8 +3,6 @@
 //! - account creation
 //! - address generation and validation
 
-use std::future::Future;
-
 use hdwallet::{secp256k1::{PublicKey, SecretKey}, ExtendedPrivKey, ExtendedPubKey};
 use sha2::{Digest, Sha256};
 use chrono::Utc;
@@ -30,7 +28,6 @@ pub struct Account {
     address: Address,
     created_at: String,
     transaction_history: Vec<Transaction>,
-    ws: Future<Output = WalletWsClient>
 }
 
 impl Wallet {
@@ -41,7 +38,7 @@ impl Wallet {
         let (public_key, private_key) = Wallet::generate_key_pair().unwrap();
         let id = "".to_string();
 
-        let ws = WalletWsClient::new(WEBSOCKET_URI.to_string());
+        //let ws = WalletWsClient::new(WEBSOCKET_URI.to_string());
         
         Self {
             id,
@@ -50,7 +47,6 @@ impl Wallet {
             created_at,
             accounts,
             name,
-            ws
         }
     }
 
