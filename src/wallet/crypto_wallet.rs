@@ -3,13 +3,15 @@
 //! - account creation
 //! - address generation and validation
 
+use std::future::Future;
+
 use hdwallet::{secp256k1::{PublicKey, SecretKey}, ExtendedPrivKey, ExtendedPubKey};
 use sha2::{Digest, Sha256};
 use chrono::Utc;
 use bip39::{Mnemonic, Language};
 
-use crate::transaction::Transaction;
-use super::Address;
+use crate::{config::WEBSOCKET_URI, transaction::Transaction};
+use super::{Address, WalletWsClient};
 
 /// Wallet struct, used for storing accounts and key pair
 #[derive(Debug, Clone)]
@@ -19,7 +21,7 @@ pub struct Wallet {
     created_at: String,
     accounts: Vec<Account>,
     public_key: PublicKey,
-    private_key: SecretKey // Used for testing, idea is not to store it in the future
+    private_key: SecretKey, // Used for testing, idea is not to store it in the future
 }
 
 /// Account struct, used to store transaction history, address.
@@ -27,7 +29,8 @@ pub struct Wallet {
 pub struct Account {
     address: Address,
     created_at: String,
-    transaction_history: Vec<Transaction>
+    transaction_history: Vec<Transaction>,
+    ws: Future<Output = WalletWsClient>
 }
 
 impl Wallet {
@@ -37,6 +40,8 @@ impl Wallet {
         let accounts = vec![];
         let (public_key, private_key) = Wallet::generate_key_pair().unwrap();
         let id = "".to_string();
+
+        let ws = WalletWsClient::new(WEBSOCKET_URI.to_string());
         
         Self {
             id,
@@ -45,6 +50,7 @@ impl Wallet {
             created_at,
             accounts,
             name,
+            ws
         }
     }
 
