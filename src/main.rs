@@ -3,7 +3,8 @@ use oxidize::{blockchain::Blockchain, wallet::Wallet};
 
 const NUMBER_OF_BLOCKS: u16 = 4;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     println!("Hello, world!");
 
     let mut node = Blockchain::build();

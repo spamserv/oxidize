@@ -6,8 +6,6 @@
 
 
 use std::{collections::HashMap, vec};
-use crate::transaction::{Transaction, TransactionInput, TransactionManager, TransactionOutput};
-use crate::wallet::Wallet;
 // Imports
 use chrono::Utc;
 use colored::Colorize;
@@ -16,8 +14,16 @@ use thiserror::Error;
 // Modules/Crates
 use crate::{
     utils::HashHelper, 
-    config::{BLOCKCHAIN_COINBASE_BLOCK_FEE, BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE, BLOCKCHAIN_INITIAL_DIFFICULTY, BLOCKCHAIN_INITIAL_NONCE
+    config::{
+        BLOCKCHAIN_COINBASE_BLOCK_FEE, 
+        BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE, 
+        BLOCKCHAIN_INITIAL_DIFFICULTY, 
+        BLOCKCHAIN_INITIAL_NONCE,
+        WEBSOCKET_URI
     }};
+use crate::transaction::{Transaction, TransactionInput, TransactionManager, TransactionOutput};
+use crate::wallet::Wallet;
+use super::BlockchainListener;
 
 #[derive(Debug, Clone)]
 pub struct Blockchain {
@@ -26,7 +32,7 @@ pub struct Blockchain {
     utxo: HashMap<String, Vec<TransactionOutput>>, // Unspent transaction outputs used for inputs into other transactions
     ledger: Vec<Transaction>, // The blockchain ledger keeps track of every transaction and the issuance of new coins through coinbase transactions.
     config: BlockchainConfig,
-    wallet: Wallet, // Mining wallet to collect coinbase block fees
+    wallet: Wallet,
 }
 
 #[derive(Debug, Clone)]
@@ -98,6 +104,9 @@ impl Blockchain {
         let mempool  = vec![];
         let utxo = HashMap::new();
         let ledger = vec![];
+        
+        // Websocket server for wallets to connect
+        BlockchainListener::run(WEBSOCKET_URI.to_string());
         
         let mut blockchain = Self {
             blocks,
