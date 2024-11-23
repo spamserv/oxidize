@@ -1,3 +1,4 @@
+use colored::Colorize;
 use futures_util::{SinkExt, StreamExt};
 use std::sync::{Arc, Mutex};
 use tokio::net::TcpListener;
@@ -28,7 +29,7 @@ impl WebSocketServer {
 
         // Main server loop to accept connections
         while let Ok((stream, addr)) = listener.accept().await {
-            println!("[Server] New connection from: {}", addr);
+            println!("{} {}", "[Server] New connection from: ".blue().bold(), addr.to_string().yellow());
             let ws_stream = accept_async(stream).await?;
             let (mut write, mut read) = ws_stream.split();
 
@@ -42,7 +43,7 @@ impl WebSocketServer {
                 let on_client_message = Arc::clone(&on_client_message);
                 async move {
                     while let Some(Ok(Message::Text(msg))) = read.next().await {
-                        println!("[Server] Received from {}: {}", addr, msg);
+                        println!("{} {}: {}", "[Server] Received from: ".blue().bold(), addr.to_string().yellow(), msg.yellow());
                         (on_client_message)(msg).await;
                     }
                 }
@@ -100,7 +101,7 @@ impl BlockchainListener {
     }
 
     async fn on_client_message(msg: String) {
-        println!("Handling message: {}", msg);
+        //println!("{} {}", "Handling message: ", msg);
         // Process the message (e.g., log, respond, etc.)
     }
 }

@@ -56,8 +56,8 @@ async fn main() {
     wallet2.create_new_account();
 
     // dbg!(node);
-    dbg!(wallet1);
-    dbg!(wallet2);
+    dbg!(wallet1.id, wallet1.name, wallet1.created_at, wallet1.accounts);
+    dbg!(wallet2.id, wallet2.name, wallet2.created_at, wallet2.accounts);
 
     loop {
         // DO STUFF

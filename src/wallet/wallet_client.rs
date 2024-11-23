@@ -1,14 +1,17 @@
 use std::{error::Error, fmt::format, sync::Arc};
 
+use colored::Colorize;
 use futures_util::{SinkExt, StreamExt};
 use tokio::{
-    net::TcpStream, sync::{mpsc, Mutex}, task::JoinHandle
+    net::TcpStream,
+    sync::{mpsc, Mutex},
+    task::JoinHandle,
 };
 use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream, WebSocketStream};
 
 #[derive(Debug, Clone)]
 pub struct WalletWsClient {
-    ws_stream: Arc<Mutex<WebSocketStream<MaybeTlsStream<TcpStream>>>>
+    ws_stream: Arc<Mutex<WebSocketStream<MaybeTlsStream<TcpStream>>>>,
 }
 
 impl WalletWsClient {
@@ -17,14 +20,14 @@ impl WalletWsClient {
 
         // Connect to the WebSocket server
         let (mut ws_stream, _) = connect_async(url_string).await?;
-        println!("[Client] Connected to the server");
+        println!("{}", "[Client] Connected to the server".blue());
 
         // Send a message to the server
         let message = "Hello, server!".to_string();
         ws_stream.send(Message::Text(message)).await?;
 
         Ok(Self {
-            ws_stream: Arc::new(Mutex::new(ws_stream))
+            ws_stream: Arc::new(Mutex::new(ws_stream)),
         })
     }
 }

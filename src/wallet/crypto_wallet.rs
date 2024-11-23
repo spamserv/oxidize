@@ -16,10 +16,10 @@ use super::{Address, WalletWsClient};
 /// Wallet struct, used for storing accounts and key pair
 #[derive(Debug, Clone)]
 pub struct Wallet {
-    id: String, // Derived from public key
-    name: String,
-    created_at: String,
-    accounts: Vec<Account>,
+    pub id: String, // Derived from public key
+    pub name: String,
+    pub created_at: String,
+    pub accounts: Vec<Account>,
     public_key: PublicKey,
     private_key: SecretKey,
     ws: WalletWsClient // Used for testing, idea is not to store it in the future
