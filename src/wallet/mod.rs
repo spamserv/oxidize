@@ -1,5 +1,8 @@
-pub mod wallet;
-pub mod address;
+mod wallet;
+mod address;
+mod wallet_message;
+mod account;
 
-pub use wallet::{Wallet, Account};
+pub use wallet::Wallet;
 pub use address::Address;
+pub use account::Account;

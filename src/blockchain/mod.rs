@@ -8,8 +8,10 @@
 //! - [`transaction_manager`]: For managing blockchain transactions
 //! - [`blockchain`]: For blockchain data structure and logic
 
-mod blockchain_node;
+mod blockchain;
 mod blockchain_listener;
+mod block;
 
-pub use blockchain_node::*;
+pub use blockchain::*;
 pub use blockchain_listener::*;
+pub use block::*;

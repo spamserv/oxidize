@@ -6,12 +6,11 @@
 use std::error::Error;
 
 use hdwallet::{secp256k1::{PublicKey, SecretKey}, ExtendedPrivKey, ExtendedPubKey};
-use sha2::{Digest, Sha256};
 use chrono::Utc;
 use bip39::{Mnemonic, Language};
 
-use crate::{config::WEBSOCKET_URI, transaction::Transaction, websockets::WebSocketClient};
-use super::Address;
+use crate::{config::WEBSOCKET_URI, websockets::WebSocketClient};
+use super::Account;
 
 /// Wallet struct, used for storing accounts and key pair
 #[derive(Debug, Clone)]
@@ -23,19 +22,6 @@ pub struct Wallet {
     public_key: PublicKey,
     private_key: SecretKey,
     ws: WebSocketClient // Used for testing, idea is not to store it in the future
-}
-
-pub enum WalletMessageType {
-    Balance,
-    Transactions,
-}
-
-/// Account struct, used to store transaction history, address.
-#[derive(Debug, Clone)]
-pub struct Account {
-    address: Address,
-    created_at: String,
-    transaction_history: Vec<Transaction>,
 }
 
 impl Wallet {
@@ -92,42 +78,5 @@ impl Wallet {
 
     pub fn accounts(&self) -> &Vec<Account> {
         &self.accounts
-    }
-}
-
-impl Account {
-    /// Creates new account
-    pub fn new(public_key: &PublicKey) -> Self {
-        let created_at = Utc::now().to_rfc3339();
-        //let address = Self::generate_address(&public_key);
-        let address = Address {
-            id: Self::generate_address(public_key),
-            transactions: vec![],
-        };
-        let transaction_history = vec![];
-
-        Self {
-            created_at,
-            address,
-            transaction_history
-        }
-    }
-
-    /// Generate Account address based on the public key
-    fn generate_address(public_key: &PublicKey) -> String {
-        let combined_string = format!("{}", public_key);
-        let mut hasher = Sha256::new();
-        hasher.update(combined_string);
-        let hash_result = hasher.finalize();
-        let hash_result = format!("{:x}", hash_result);
-        hash_result
-    }
-
-    pub fn get_balance() -> u64 {
-        todo!()
-    }
-
-    pub fn address(&self) -> &Address {
-        &self.address
     }
 }
