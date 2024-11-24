@@ -2,7 +2,9 @@
 
 An attempt to implement simple blockchain using Rust, while learning Rust.
 
-<img src="https://github.com/spamserv/oxidize/blob/main/logo.png?raw=true" alt="drawing" width="300"/>
+<p align="center">
+    <img src="https://github.com/spamserv/oxidize/blob/main/logo.png?raw=true" alt="drawing" width="300"/>
+</p>
 
 ## Blockchain Project Development Roadmap
 
