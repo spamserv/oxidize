@@ -1,20 +1,19 @@
-use std::{error::Error, fmt::format, sync::Arc};
+use std::{error::Error, sync::Arc};
 
 use colored::Colorize;
-use futures_util::{SinkExt, StreamExt};
+use futures_util::SinkExt;
 use tokio::{
     net::TcpStream,
-    sync::{mpsc, Mutex},
-    task::JoinHandle,
+    sync::Mutex,
 };
 use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream, WebSocketStream};
 
 #[derive(Debug, Clone)]
-pub struct WalletWsClient {
+pub struct WebSocketClient {
     ws_stream: Arc<Mutex<WebSocketStream<MaybeTlsStream<TcpStream>>>>,
 }
 
-impl WalletWsClient {
+impl WebSocketClient {
     pub async fn new(address: String) -> Result<Self, Box<dyn Error>> {
         let url_string = format!("ws://{address}");
 

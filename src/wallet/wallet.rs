@@ -10,8 +10,8 @@ use sha2::{Digest, Sha256};
 use chrono::Utc;
 use bip39::{Mnemonic, Language};
 
-use crate::{config::WEBSOCKET_URI, transaction::Transaction};
-use super::{Address, WalletWsClient};
+use crate::{config::WEBSOCKET_URI, transaction::Transaction, websockets::WebSocketClient};
+use super::Address;
 
 /// Wallet struct, used for storing accounts and key pair
 #[derive(Debug, Clone)]
@@ -22,7 +22,12 @@ pub struct Wallet {
     pub accounts: Vec<Account>,
     public_key: PublicKey,
     private_key: SecretKey,
-    ws: WalletWsClient // Used for testing, idea is not to store it in the future
+    ws: WebSocketClient // Used for testing, idea is not to store it in the future
+}
+
+pub enum WalletMessageType {
+    Balance,
+    Transactions,
 }
 
 /// Account struct, used to store transaction history, address.
@@ -41,7 +46,7 @@ impl Wallet {
         let (public_key, private_key) = Wallet::generate_key_pair().unwrap();
         let id = "".to_string();
         
-        let ws = WalletWsClient::new(WEBSOCKET_URI.to_string()).await?;
+        let ws = WebSocketClient::new(WEBSOCKET_URI.to_string()).await?;
         
         Ok(Self {
             id,
