@@ -1,26 +1,38 @@
+use serde::{Deserialize, Serialize};
+use crate::transaction::Transaction;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum WalletMessageType {
-    Balance,
-    TransactionHistory,
-    TransactionSend,
+    TransactionSend {
+        transactions: Transaction
+    }, // Sends a new transaction to the server "node"
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum NodeMessageType {
+    Balance {
+        balance: u64
+    }, // Sends balance from server "node" to client
+    TransactionHistory {
+        transactions: Vec<Transaction>
+    }, // Sends transaction history from server "node" to client
+}
+
+pub trait WalletMessagePayload: Serialize {}
+
+impl WalletMessagePayload for WalletMessageType {}
+impl WalletMessagePayload for NodeMessageType {}
+
+pub struct WalletMessage<T> {
+    request_id: String,
+    account_id: String,
+    direction: WalletMessageDirection,
+    pub payload: T,
+}
+
+#[derive(Debug, Clone)]
 pub enum WalletMessageDirection {
     ServerToClient,
     ClientToServer,
-}
-
-impl WalletMessageType {
-    fn as_str(&self) -> &str {
-        match &self {
-            WalletMessageType::Balance => "get_balance",
-            WalletMessageType::TransactionHistory => "get_transaction_history",
-            WalletMessageType::TransactionSend => "send_transaction"
-        }
-    }
-}
-
-pub struct WebsocketMessage {
-    message_type: WalletMessageType,
-    direction: WalletMessageDirection,
-
 }
