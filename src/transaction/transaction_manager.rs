@@ -5,10 +5,11 @@
 //! 
 
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 
-use crate::{utils::TransactionHelper};
+use crate::utils::TransactionHelper;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
     inputs: Vec<TransactionInput>,
     outputs: Vec<TransactionOutput>,
@@ -21,7 +22,7 @@ impl Transaction {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionInput {
     pub previous_tx_hash: String,  // Hash of the previous transaction
     pub index: u32,                // Index of the output being used
@@ -29,13 +30,13 @@ pub struct TransactionInput {
     pub amount: u64
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionOutput {
     pub recipient_address: String,  // The address of the recipient
     pub amount: u64,                // The amount of currency being sent
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct TransactionMetadata {
     transaction_id: String,
     timestamp: String,
@@ -43,14 +44,14 @@ struct TransactionMetadata {
     r#type: TransactionType
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TransactionStatus {
     Pending,
     Mined,
     Rejected,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TransactionType {
     Coinbase, // For mining a new block, does not get put into UTXO
     Fee, // For transaction fees
