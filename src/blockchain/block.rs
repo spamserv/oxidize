@@ -2,7 +2,6 @@ use chrono::Utc;
 use thiserror::Error;
 use crate::{config::{BLOCKCHAIN_INITIAL_DIFFICULTY, BLOCKCHAIN_INITIAL_NONCE}, transaction::Transaction, utils::HashHelper};
 
-
 #[derive(Debug, Clone)]
 pub struct Block {
     pub header: BlockHeader,

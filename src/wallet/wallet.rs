@@ -10,7 +10,7 @@ use chrono::Utc;
 use bip39::{Mnemonic, Language};
 
 use crate::{config::WEBSOCKET_URI, websockets::WebSocketClient};
-use super::Account;
+use super::{wallet_message::{NodeMessageType, WalletMessage}, Account, WalletClient};
 
 /// Wallet struct, used for storing accounts and key pair
 #[derive(Debug, Clone)]
@@ -21,7 +21,7 @@ pub struct Wallet {
     pub accounts: Vec<Account>,
     public_key: PublicKey,
     private_key: SecretKey,
-    ws: WebSocketClient // Used for testing, idea is not to store it in the future
+    ws: WalletClient // Used for testing, idea is not to store it in the future
 }
 
 impl Wallet {
@@ -31,8 +31,9 @@ impl Wallet {
         let accounts = vec![];
         let (public_key, private_key) = Wallet::generate_key_pair().unwrap();
         let id = "".to_string();
+        let ws = WalletClient::new(WEBSOCKET_URI.to_string()).await?;
         
-        let ws = WebSocketClient::new(WEBSOCKET_URI.to_string()).await?;
+        ws.send_message(NodeMessageType::Balance { balance: 24 }).await?;
         
         Ok(Self {
             id,
