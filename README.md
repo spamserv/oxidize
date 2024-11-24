@@ -50,6 +50,7 @@ Here is the current state of the blockchain:
 #### 4. Wallets
 - [x] Implement Wallet & Address creation
 - [ ] Implement send of value functionality
+- [ ] Get balance & transaction history for all accounts
 
 #### 5. Networking and Node Communication
 - [x] Build TCP client/server communication for wallet and node communication.
