@@ -60,7 +60,7 @@ impl BlockchainConfig {
         } else {
             WEBSOCKET_URI.to_string()
         };
-        
+
         BlockchainConfig { 
             addr,
             difficulty
@@ -75,7 +75,7 @@ impl Blockchain {
     pub async fn build(config: BlockchainConfig) -> Result<Self, Box<dyn Error>> {
 
         // Websocket server for wallets to connect
-        let listener = Some(BlockchainListener::run(WEBSOCKET_URI.to_string()));
+        let listener = Some(BlockchainListener::run(config.addr.to_string()));
 
         let mut wallet = Wallet::new("MiningFeeWallet#1".to_string()).await?;
 
@@ -359,7 +359,9 @@ mod tests {
     use super::*;
 
     async fn build_blockchain() -> Blockchain {
-        match Blockchain::build().await {
+        let config = BlockchainConfig::new(true);
+
+        match Blockchain::build(config).await {
             Ok(node) => node,
             Err(e) => {
                 panic!("Failed to build blockchain: {:?}", e);

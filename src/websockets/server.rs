@@ -27,7 +27,7 @@ impl WebSocketServer {
         Fut: std::future::Future<Output = ()> + Send + 'static,
     {
         let listener = TcpListener::bind(addr).await?;
-        println!("[Server] Listening on {}", addr);
+        println!("[Server] Listening on {:?}", listener.local_addr());
 
         let on_client_message = Arc::new(on_client_message);
         let clients = Arc::clone(&self.clients);
