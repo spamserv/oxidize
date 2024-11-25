@@ -2,36 +2,49 @@
 //!
 //! It defines the structure of the blockchain, how blocks are created, and
 //! the validation of transactions within the blockchain.
-//! 
+//!
 
 // Imports
-use std::{collections::HashMap, vec};
 use colored::Colorize;
 use std::error::Error;
+use std::{collections::HashMap, vec};
 
 // Modules/Crates
-use crate::{
-    utils::HashHelper, 
-    config::{
-        BLOCKCHAIN_COINBASE_BLOCK_FEE, 
-        BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE, 
-        BLOCKCHAIN_INITIAL_DIFFICULTY,
-        WEBSOCKET_URI
-    }};
+use super::{Block, BlockValidationError, BlockchainListener};
 use crate::transaction::{Transaction, TransactionInput, TransactionManager, TransactionOutput};
 use crate::wallet::Wallet;
-use super::{Block, BlockValidationError, BlockchainListener};
+use crate::{
+    config::{
+        BLOCKCHAIN_COINBASE_BLOCK_FEE, BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE,
+        BLOCKCHAIN_INITIAL_DIFFICULTY, WEBSOCKET_URI,
+    },
+    utils::HashHelper,
+};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Blockchain {
-    blocks: Vec<Block>, // Mined blocks
-    mempool: Vec<TransactionInput>, // Pending transactions
+    blocks: Vec<Block>,                            // Mined blocks
+    mempool: Vec<TransactionInput>,                // Pending transactions
     utxo: HashMap<String, Vec<TransactionOutput>>, // Unspent transaction outputs used for inputs into other transactions
     ledger: Vec<Transaction>, // The blockchain ledger keeps track of every transaction and the issuance of new coins through coinbase transactions.
     config: BlockchainConfig,
     wallet: Wallet,
+    listener: Option<BlockchainListener>,
 }
 
+impl Clone for Blockchain {
+    fn clone(&self) -> Self {
+        Self {
+            blocks: self.blocks.clone(),   // Mined blocks
+            mempool: self.mempool.clone(), // Pending transactions
+            utxo: self.utxo.clone(), // Unspent transaction outputs used for inputs into other transactions
+            ledger: self.ledger.clone(), // The blockchain ledger keeps track of every transaction and the issuance of new coins through coinbase transactions.
+            config: self.config.clone(),
+            wallet: self.wallet.clone(),
+            listener: None
+        }
+    }
+}
 #[derive(Debug, Clone)]
 pub struct BlockchainConfig {
     difficulty: u8,
@@ -39,42 +52,46 @@ pub struct BlockchainConfig {
 
 /// Blockchain structure, consisting of vector of blocks and its configuration
 impl Blockchain {
-    
     /// Builds a blockchain from scratch
     /// Creates genesis block based on the BLOCKCHAIN_INITIAL_DIFFICULTY
-    pub async fn build() -> Result<Self, Box <dyn Error>> {
+    pub async fn build() -> Result<Self, Box<dyn Error>> {
         let config = BlockchainConfig {
-            difficulty: BLOCKCHAIN_INITIAL_DIFFICULTY
+            difficulty: BLOCKCHAIN_INITIAL_DIFFICULTY,
         };
 
         // Websocket server for wallets to connect
-        BlockchainListener::run(WEBSOCKET_URI.to_string()).await;
+        let listener = Some(BlockchainListener::run(WEBSOCKET_URI.to_string()));
 
         let mut wallet = Wallet::new("MiningFeeWallet#1".to_string()).await?;
 
         wallet.create_new_account();
-        let coinbase_account = wallet.accounts()
+        let coinbase_account = wallet
+            .accounts()
             .first()
             .expect("No coinbase error available.");
 
         let coinbase_address = coinbase_account.address();
 
-        let coinbase_transaction = TransactionManager::create_coinbase_transaction(coinbase_address.id(), BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE);
+        let coinbase_transaction = TransactionManager::create_coinbase_transaction(
+            coinbase_address.id(),
+            BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE,
+        );
 
         let genesis_block = Block::create_genesis_block(coinbase_transaction);
 
         let blocks = vec![genesis_block.clone()]; // Clone it because it has to be borrowed to reward_block_finder
-        let mempool  = vec![];
+        let mempool = vec![];
         let utxo = HashMap::new();
         let ledger = vec![];
-        
+
         let mut blockchain = Self {
             blocks,
             config,
             mempool,
             utxo,
             ledger,
-            wallet
+            wallet,
+            listener,
         };
 
         blockchain.reward_block_finder(&genesis_block);
@@ -89,19 +106,28 @@ impl Blockchain {
 
     /// Mines a new block
     /// Based on the previous block hash and transactions that will go inside the block
-    pub fn add_block(&mut self){
+    pub fn add_block(&mut self) {
         let last_block_header = &self.blocks.last().unwrap().header;
 
-        let coinbase_account = self.wallet.accounts()
+        let coinbase_account = self
+            .wallet
+            .accounts()
             .first()
             .expect("No coinbase error available.");
         let coinbase_address = coinbase_account.address();
-        let coinbase_transaction = TransactionManager::create_coinbase_transaction(coinbase_address.id(), BLOCKCHAIN_COINBASE_BLOCK_FEE);
+        let coinbase_transaction = TransactionManager::create_coinbase_transaction(
+            coinbase_address.id(),
+            BLOCKCHAIN_COINBASE_BLOCK_FEE,
+        );
 
         // Get all transactions for the block
         let transactions = vec![coinbase_transaction];
-        let new_block = Block::new(&last_block_header.current_hash, &transactions, last_block_header.difficulty);
-        
+        let new_block = Block::new(
+            &last_block_header.current_hash,
+            &transactions,
+            last_block_header.difficulty,
+        );
+
         self.reward_block_finder(&new_block);
         self.push_new_block(new_block);
     }
@@ -109,62 +135,67 @@ impl Blockchain {
     /// Validates a single block by checking several factors
     /// Returns a Result<(), BlockValidationError>
     pub fn validate_single_block(&mut self, hash: &String) -> Result<(), BlockValidationError> {
-        let block= self.blocks
+        let block = self
+            .blocks
             .iter()
             .find(|b| b.header.current_hash == *hash)
             .ok_or(BlockValidationError::BlockNotFound)?;
 
         if self.blocks.len() <= 1 {
-            return Err(BlockValidationError::InsufficientBlocks)
+            return Err(BlockValidationError::InsufficientBlocks);
         }
 
         if !HashHelper::is_valid_hash(block) {
             println!("Block hash: {}", block.header.current_hash);
-            return Err(BlockValidationError::InvalidHash)
+            return Err(BlockValidationError::InvalidHash);
         }
 
-        let prev_block = self.blocks
+        let prev_block = self
+            .blocks
             .iter()
             .find(|b| b.header.current_hash == block.header.previous_hash)
             .ok_or(BlockValidationError::PreviousBlockNotFound)?;
-        
+
         if prev_block.header.current_hash != block.header.previous_hash {
-            return Err(BlockValidationError::PreviousHashMismatch)
+            return Err(BlockValidationError::PreviousHashMismatch);
         }
 
         if block.header.timestamp <= prev_block.header.timestamp {
-            return Err(BlockValidationError::InvalidTimestamp)
+            return Err(BlockValidationError::InvalidTimestamp);
         }
 
         Ok(())
-
     }
 
     /// Validates the full chain by looping through every block
     /// Returns a Result<(), BlockValidationError>
     pub fn validate_full_chain(&mut self) -> Result<(), BlockValidationError> {
         if self.blocks.len() <= 1 {
-            return Err(BlockValidationError::InsufficientBlocks)
+            return Err(BlockValidationError::InsufficientBlocks);
         }
 
         for (idx, block) in self.blocks.iter().enumerate() {
             if !HashHelper::is_valid_hash(block) {
-                println!("Failed on idx: {}, block hash: {}", idx, block.header.current_hash);
-                return Err(BlockValidationError::InvalidHash)
+                println!(
+                    "Failed on idx: {}, block hash: {}",
+                    idx, block.header.current_hash
+                );
+                return Err(BlockValidationError::InvalidHash);
             }
-            
+
             if idx != 0 {
-                let prev_block = self.blocks
-                .iter()
-                .find(|b| b.header.current_hash == block.header.previous_hash)
-                .ok_or(BlockValidationError::PreviousBlockNotFound)?;
+                let prev_block = self
+                    .blocks
+                    .iter()
+                    .find(|b| b.header.current_hash == block.header.previous_hash)
+                    .ok_or(BlockValidationError::PreviousBlockNotFound)?;
 
                 if prev_block.header.current_hash != block.header.previous_hash {
-                    return Err(BlockValidationError::PreviousHashMismatch)
+                    return Err(BlockValidationError::PreviousHashMismatch);
                 }
 
                 if block.header.timestamp <= prev_block.header.timestamp {
-                    return Err(BlockValidationError::InvalidTimestamp)
+                    return Err(BlockValidationError::InvalidTimestamp);
                 }
             }
         }
@@ -173,44 +204,51 @@ impl Blockchain {
 
     /// Validates a range between `from_hash` and `to_hash`
     /// Returns a Result<(), BlockValidationError>
-    pub fn validate_range_chain(&mut self, from_hash: &str, to_hash: &str) -> Result<(), BlockValidationError> {
+    pub fn validate_range_chain(
+        &mut self,
+        from_hash: &str,
+        to_hash: &str,
+    ) -> Result<(), BlockValidationError> {
         let (from_index, to_index) = match self.find_hash_indices(from_hash, to_hash) {
             None => return Err(BlockValidationError::RangeIndexFault),
             Some((from_index, to_index)) => (from_index, to_index),
         };
 
         if self.blocks.len() <= 1 {
-            return Err(BlockValidationError::InsufficientBlocks)
+            return Err(BlockValidationError::InsufficientBlocks);
         }
 
         for idx in from_index..=to_index {
-            
-            let block = self.blocks
+            let block = self
+                .blocks
                 .get(idx)
                 .ok_or(BlockValidationError::BlockNotFound)?;
-    
+
             if !HashHelper::is_valid_hash(block) {
-                println!("Failed on idx: {}, block hash: {}", idx, block.header.current_hash);
-                return Err(BlockValidationError::InvalidHash)
+                println!(
+                    "Failed on idx: {}, block hash: {}",
+                    idx, block.header.current_hash
+                );
+                return Err(BlockValidationError::InvalidHash);
             }
-            
+
             if idx != 0 {
-                let prev_block = self.blocks
-                .iter()
-                .find(|b| b.header.current_hash == block.header.previous_hash)
-                .ok_or(BlockValidationError::PreviousBlockNotFound)?;
+                let prev_block = self
+                    .blocks
+                    .iter()
+                    .find(|b| b.header.current_hash == block.header.previous_hash)
+                    .ok_or(BlockValidationError::PreviousBlockNotFound)?;
 
                 if prev_block.header.current_hash != block.header.previous_hash {
-                    return Err(BlockValidationError::PreviousHashMismatch)
+                    return Err(BlockValidationError::PreviousHashMismatch);
                 }
 
                 if block.header.timestamp <= prev_block.header.timestamp {
-                    return Err(BlockValidationError::InvalidTimestamp)
+                    return Err(BlockValidationError::InvalidTimestamp);
                 }
             }
         }
         Ok(())
-
     }
 
     /// Finds indexes of:
@@ -238,19 +276,30 @@ impl Blockchain {
     }
 
     fn reward_block_finder(&mut self, block: &Block) {
-        let coinbase_transaction = block.body()
+        let coinbase_transaction = block
+            .body()
             .transactions()
             .first()
-            .unwrap_or_else( ||  { 
-                panic!("{}", "No (coinbase) Transactions in the Transactions vector of a Block.".red().to_string()) 
+            .unwrap_or_else(|| {
+                panic!(
+                    "{}",
+                    "No (coinbase) Transactions in the Transactions vector of a Block."
+                        .red()
+                        .to_string()
+                )
             })
             .clone();
 
         let coinbase_transaction_output = coinbase_transaction
             .outputs()
             .first()
-            .unwrap_or_else( ||  { 
-                panic!("{}", "No (coinbase) TransactionOutput in the TransactionOutputs vector.".red().to_string())
+            .unwrap_or_else(|| {
+                panic!(
+                    "{}",
+                    "No (coinbase) TransactionOutput in the TransactionOutputs vector."
+                        .red()
+                        .to_string()
+                )
             })
             .clone();
 
@@ -267,8 +316,13 @@ impl Blockchain {
     }
 
     /// Update UTXO hash map for that address with a new transaction output
-    fn update_utxo_with_transaction(&mut self, address: String, transaction_output: TransactionOutput) {
-        self.utxo.entry(address)
+    fn update_utxo_with_transaction(
+        &mut self,
+        address: String,
+        transaction_output: TransactionOutput,
+    ) {
+        self.utxo
+            .entry(address)
             .or_default()
             .push(transaction_output);
     }
@@ -277,12 +331,18 @@ impl Blockchain {
     fn push_new_block(&mut self, block: Block) {
         self.blocks.push(block);
     }
+
+    async fn shutdown(&mut self) {
+        if let Some(listener) = &mut self.listener {
+            listener.shutdown().await
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     async fn build_blockchain() -> Blockchain {
         match Blockchain::build().await {
             Ok(node) => node,
@@ -291,7 +351,7 @@ mod tests {
             }
         }
     }
-    
+
     #[tokio::test]
     async fn it_builds_a_blockchain() {
         let node = build_blockchain().await;
@@ -305,21 +365,25 @@ mod tests {
             node.add_block();
         }
 
-        assert_eq!(node.blocks.len(), 3);        
+        assert_eq!(node.blocks.len(), 3);
+
+        node.shutdown().await
     }
 
     #[tokio::test]
     async fn it_validates_single_blockchain_block() {
         let mut node = build_blockchain().await;
-        
+
         node.add_block();
 
-        let blocks = node.blocks().clone(); 
+        let blocks = node.blocks().clone();
         let block_1 = blocks.get(0).unwrap().clone();
 
         let validation = node.validate_single_block(block_1.header().current_hash());
 
         assert!(validation.is_ok());
+
+        node.shutdown().await
     }
 
     #[tokio::test]
@@ -330,19 +394,24 @@ mod tests {
             node.add_block();
         }
 
-        let blocks = node.blocks().clone(); 
+        let blocks = node.blocks().clone();
         let block_1 = blocks.get(1).unwrap().clone();
         let block_2 = blocks.get(3).unwrap().clone();
 
-        let validation = node.validate_range_chain(block_1.header().current_hash(), block_2.header().current_hash());
+        let validation = node.validate_range_chain(
+            block_1.header().current_hash(),
+            block_2.header().current_hash(),
+        );
 
         assert!(validation.is_ok());
+
+        node.shutdown().await
     }
 
     #[tokio::test]
     async fn it_validates_full_blockchain() {
         let mut node = build_blockchain().await;
-        
+
         for _ in 1..=5 {
             node.add_block();
         }
@@ -350,6 +419,7 @@ mod tests {
         let validation = node.validate_full_chain();
 
         assert!(validation.is_ok());
-    }
 
+        node.shutdown().await
+    }
 }
