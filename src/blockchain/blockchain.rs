@@ -282,9 +282,74 @@ impl Blockchain {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn it_works() {
-        println!("Works!")
+    
+    async fn build_blockchain() -> Blockchain {
+        match Blockchain::build().await {
+            Ok(node) => node,
+            Err(e) => {
+                panic!("Failed to build blockchain: {:?}", e);
+            }
+        }
     }
+    
+    #[tokio::test]
+    async fn it_builds_a_blockchain() {
+        let node = build_blockchain().await;
+    }
+
+    #[tokio::test]
+    async fn it_creates_blockchain_blocks() {
+        let mut node = build_blockchain().await;
+
+        for _ in 1..=3 {
+            node.add_block();
+        }
+
+        assert_eq!(node.blocks.len(), 3);        
+    }
+
+    #[tokio::test]
+    async fn it_validates_single_blockchain_block() {
+        let mut node = build_blockchain().await;
+        
+        node.add_block();
+
+        let blocks = node.blocks().clone(); 
+        let block_1 = blocks.get(0).unwrap().clone();
+
+        let validation = node.validate_single_block(block_1.header().current_hash());
+
+        assert!(validation.is_ok());
+    }
+
+    #[tokio::test]
+    async fn it_validates_blockchain_range() {
+        let mut node = build_blockchain().await;
+
+        for _ in 1..=5 {
+            node.add_block();
+        }
+
+        let blocks = node.blocks().clone(); 
+        let block_1 = blocks.get(1).unwrap().clone();
+        let block_2 = blocks.get(3).unwrap().clone();
+
+        let validation = node.validate_range_chain(block_1.header().current_hash(), block_2.header().current_hash());
+
+        assert!(validation.is_ok());
+    }
+
+    #[tokio::test]
+    async fn it_validates_full_blockchain() {
+        let mut node = build_blockchain().await;
+        
+        for _ in 1..=5 {
+            node.add_block();
+        }
+
+        let validation = node.validate_full_chain();
+
+        assert!(validation.is_ok());
+    }
+
 }
