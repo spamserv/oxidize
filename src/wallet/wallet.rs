@@ -3,7 +3,7 @@
 //! - account creation
 //! - address generation and validation
 
-use std::error::Error;
+use std::{error::Error, thread::sleep, time};
 
 use hdwallet::{secp256k1::{PublicKey, SecretKey}, ExtendedPrivKey, ExtendedPubKey};
 use chrono::Utc;
@@ -32,9 +32,9 @@ impl Wallet {
         let (public_key, private_key) = Wallet::generate_key_pair().unwrap();
         let id = "".to_string();
         let ws = WalletClient::new(WEBSOCKET_URI.to_string()).await?;
-        
-        ws.send_message(NodeMessageType::Balance { balance: 24 }).await?;
-        
+        // Lets wait for the full blockchain init before sending messages.
+        // ws.send_message(NodeMessageType::Balance { balance: 24 }).await?;
+
         Ok(Self {
             id,
             public_key,

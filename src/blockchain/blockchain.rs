@@ -48,16 +48,31 @@ impl Clone for Blockchain {
 #[derive(Debug, Clone)]
 pub struct BlockchainConfig {
     difficulty: u8,
+    pub addr: String,
+}
+
+impl BlockchainConfig {
+    pub fn new(dynamic: bool) -> Self {
+        let difficulty = BLOCKCHAIN_INITIAL_DIFFICULTY;
+
+        let addr = if dynamic {
+            "127.0.0.1:0".to_string()
+        } else {
+            WEBSOCKET_URI.to_string()
+        };
+        
+        BlockchainConfig { 
+            addr,
+            difficulty
+        }
+    }
 }
 
 /// Blockchain structure, consisting of vector of blocks and its configuration
 impl Blockchain {
     /// Builds a blockchain from scratch
     /// Creates genesis block based on the BLOCKCHAIN_INITIAL_DIFFICULTY
-    pub async fn build() -> Result<Self, Box<dyn Error>> {
-        let config = BlockchainConfig {
-            difficulty: BLOCKCHAIN_INITIAL_DIFFICULTY,
-        };
+    pub async fn build(config: BlockchainConfig) -> Result<Self, Box<dyn Error>> {
 
         // Websocket server for wallets to connect
         let listener = Some(BlockchainListener::run(WEBSOCKET_URI.to_string()));

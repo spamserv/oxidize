@@ -1,5 +1,5 @@
 use colored::Colorize;
-use oxidize::{blockchain::Blockchain, wallet::Wallet};
+use oxidize::{blockchain::{Blockchain, BlockchainConfig}, wallet::Wallet};
 
 const NUMBER_OF_BLOCKS: u16 = 4;
 
@@ -7,7 +7,9 @@ const NUMBER_OF_BLOCKS: u16 = 4;
 async fn main() {
     println!("Hello, world!");
 
-    let mut node = Blockchain::build()
+    let config = BlockchainConfig::new(false);
+
+    let mut node = Blockchain::build(config)
         .await
         .expect("Cannot create blockchain.");
     println!("{}", "Initiated blockchain, with genesis block".bold().green());
