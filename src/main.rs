@@ -1,10 +1,12 @@
+use std::error::Error;
+
 use colored::Colorize;
-use oxidize::{blockchain::{Blockchain, BlockchainConfig}, wallet::Wallet};
+use oxidize::{blockchain::{Blockchain, BlockchainConfig}, config::WEBSOCKET_URI, wallet::Wallet};
 
 const NUMBER_OF_BLOCKS: u16 = 4;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn Error>>{
     println!("Hello, world!");
 
     let config = BlockchainConfig::new(false);
@@ -19,7 +21,7 @@ async fn main() {
 
     println!("Creating {} blocks", NUMBER_OF_BLOCKS);
     for _ in 1..=NUMBER_OF_BLOCKS {
-        node.add_block();
+        node.add_block().await;
     }
 
     let blocks = node.blocks().clone(); 
@@ -46,16 +48,14 @@ async fn main() {
     }
 
     println!("{}", "Creating 2 wallets".bold());
-    let mut wallet1 = Wallet::new("Wallet#1".to_string(), )
-        .await
-        .expect("Cannot create wallet.");
+    let mut wallet1 = Wallet::new("Wallet#1".to_string(), WEBSOCKET_URI.to_string());
+    wallet1.connect().await?;
     wallet1.create_new_account();
     wallet1.create_new_account();
     
-    let mut wallet2 = Wallet::new("Wallet#2".to_string())
-        .await
-        .expect("Cannot create wallet.");
+    let mut wallet2 = Wallet::new("Wallet#2".to_string(), WEBSOCKET_URI.to_string());
 
+    wallet2.connect().await?;
     wallet2.create_new_account();
     wallet2.create_new_account();
 
