@@ -1,51 +1,85 @@
 use std::sync::Arc;
 
-use crate::websockets::WebSocketServer;
-use tokio::sync::{oneshot, Mutex};
+use crate::{wallet::Wallet, websockets::WebSocketServer};
+use futures_util::StreamExt;
+use serde::{Deserialize, Serialize};
+use tokio::{net::TcpStream, sync::{oneshot, Mutex}, task::JoinHandle};
+use tokio_tungstenite::{accept_async, tungstenite::Message};
+use anyhow::Result;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum BlockchainWebsocketMessage {
+    NewTransaction,
+    QueryUtxo,
+    WalletBalance,
+    Ping,
+    Other
+}
 
 #[derive(Debug, Clone)]
 pub struct BlockchainListener {
-    server: WebSocketServer,
-    shutdown_tx: oneshot::Sender<()>,
-    shutdown_rx: oneshot::Receiver<()>,
-    server_handle: tokio::task::JoinHandle<()>
+    address: String,
+    websocket_server: WebSocketServer,
+    wallet: Arc<Mutex<Wallet>>
 }
 
 impl BlockchainListener {
-    pub async fn run(address: String) -> Self {
-        let server = WebSocketServer::new(&address).await;
-
-        let mut server = match server {
-            Ok(server) => server,
-            Err(e) => panic!("Error running TcpClient"),
-        };
-
-        // Create shutdown channel
-        let (shutdown_tx, shutdown_rx) = oneshot::channel();
-
-        // Run the WebSocket server as a separate task
-        let server_handle = tokio::spawn(async move {
-            if let Err(e) = server.clone().run().await {
-                eprintln!("Error running server: {}", e);
-            }
-        });
+    pub async fn new(address: String, wallet: Arc<Mutex<Wallet>>) -> Self {
+        let server = WebSocketServer::new(&address);
 
         println!("Websocket initialized...");
 
         Self {
-            server.clone(),
-            shutdown_tx,
-            shutdown_rx,
-            server_handle,
+            address,
+            websocket_server: server.clone(),
+            wallet
         }
     }
 
-    pub async fn shutdown(&self) {
-        self.server.
-    }
-    
+    pub async fn start(&mut self) -> Result<()> {
+        // Start WebSocket server with connection handler
+        let this = self.clone();
+        self.websocket_server.start( move |stream| {
+            // Use service listener to handle each connection
+            this.handle_connection(stream);
+        }).await?;
 
-    async fn on_client_message(msg: String) {
-        // Process the message from here if needed, will be passed back all the way up
+        Ok(())
     }
+
+    fn handle_connection(&self, stream: TcpStream) -> JoinHandle<()> {
+        // Clone wallets for use in async block
+        let wallets = Arc::clone(&self.wallet);
+
+        // Spawn task for each connection
+        tokio::spawn(async move {
+            // Upgrade to WebSocket
+            let mut websocket = match accept_async(stream).await {
+                Ok(ws) => ws,
+                Err(e) => {
+                    eprintln!("WebSocket accept error: {}", e);
+                    return;
+                }
+            };
+
+            while let Some(msg) = websocket.next().await {
+                match msg {
+                    Ok(Message::Text(text)) => {
+                        // Deserialize the balance request
+                        println!("{}", text);
+                    }
+                    Err(e) => {
+                        eprintln!("WebSocket error: {}", e);
+                        break;
+                    }
+                    _ => {} // Ignore non-text messages
+                }
+            }
+        })
+    }
+
+    pub async fn shutdown(&mut self) {
+        self.websocket_server.shutdown().await;
+    }
+
 }
