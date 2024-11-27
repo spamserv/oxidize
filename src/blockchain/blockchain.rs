@@ -7,12 +7,14 @@
 // Imports
 use colored::Colorize;
 use std::error::Error;
+use std::sync::Arc;
 use std::{collections::HashMap, vec};
+use tokio::sync::Mutex;
 
 // Modules/Crates
 use super::{Block, BlockValidationError, BlockchainListener};
 use crate::transaction::{Transaction, TransactionInput, TransactionManager, TransactionOutput};
-use crate::wallet::Wallet;
+use crate::wallet::{Account, Address, Wallet};
 use crate::{
     config::{
         BLOCKCHAIN_COINBASE_BLOCK_FEE, BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE,
@@ -28,8 +30,8 @@ pub struct Blockchain {
     utxo: HashMap<String, Vec<TransactionOutput>>, // Unspent transaction outputs used for inputs into other transactions
     ledger: Vec<Transaction>, // The blockchain ledger keeps track of every transaction and the issuance of new coins through coinbase transactions.
     config: BlockchainConfig,
-    wallet: Wallet,
-    listener: BlockchainListener,
+    wallet: Arc<Mutex<Wallet>>,
+    pub listener: BlockchainListener,
 }
 
 impl Clone for Blockchain {
@@ -41,7 +43,7 @@ impl Clone for Blockchain {
             ledger: self.ledger.clone(), // The blockchain ledger keeps track of every transaction and the issuance of new coins through coinbase transactions.
             config: self.config.clone(),
             wallet: self.wallet.clone(),
-            listener: self.listener.clone()
+            listener: self.listener.clone(),
         }
     }
 }
@@ -61,10 +63,7 @@ impl BlockchainConfig {
             WEBSOCKET_URI.to_string()
         };
 
-        BlockchainConfig { 
-            addr,
-            difficulty
-        }
+        BlockchainConfig { addr, difficulty }
     }
 }
 
@@ -73,26 +72,41 @@ impl Blockchain {
     /// Builds a blockchain from scratch
     /// Creates genesis block based on the BLOCKCHAIN_INITIAL_DIFFICULTY
     pub async fn build(config: BlockchainConfig) -> Result<Self, Box<dyn Error>> {
+        let wallet = Arc::new(Mutex::new(
+            Wallet::new("MiningFeeWallet#1".to_string(), config.addr.to_string()),
+        ));
 
         // Websocket server for wallets to connect
-        let listener = 
-            Some(BlockchainListener::run(config.addr.to_string()))
-            .unwrap().await;
+        let mut listener = BlockchainListener::new(config.addr.to_string(), wallet.clone()).await;
+        listener.start().await?;
+        // let listener =
+        //     Some(BlockchainListener::run(config.addr.to_string()))
+        //     .unwrap().await;
 
-        let mut wallet = Wallet::new("MiningFeeWallet#1".to_string(), config.addr).await?;
+        let mut wallet_mutex = wallet.lock().await;
+        wallet_mutex.connect().await?;
+        wallet_mutex.create_new_account();
 
-        wallet.create_new_account();
-        let coinbase_account = wallet
-            .accounts()
-            .first()
-            .expect("No coinbase error available.");
+        let coinbase_account: &Account;
+        let coinbase_address: &Address;
+        let coinbase_transaction: Transaction;
 
-        let coinbase_address = coinbase_account.address();
+        // Scoped lock for  mutex
+        {
+            let wallet_lock = wallet_mutex;
 
-        let coinbase_transaction = TransactionManager::create_coinbase_transaction(
-            coinbase_address.id(),
-            BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE,
-        );
+            coinbase_account = wallet_lock
+                .accounts()
+                .first()
+                .expect("No coinbase error available.");
+
+            coinbase_address = coinbase_account.address();
+
+            coinbase_transaction = TransactionManager::create_coinbase_transaction(
+                coinbase_address.id(),
+                BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE,
+            );
+        }
 
         let genesis_block = Block::create_genesis_block(coinbase_transaction);
 
@@ -123,19 +137,25 @@ impl Blockchain {
 
     /// Mines a new block
     /// Based on the previous block hash and transactions that will go inside the block
-    pub fn add_block(&mut self) {
+    pub async fn add_block(&mut self) {
         let last_block_header = &self.blocks.last().unwrap().header;
 
-        let coinbase_account = self
-            .wallet
-            .accounts()
-            .first()
-            .expect("No coinbase error available.");
-        let coinbase_address = coinbase_account.address();
-        let coinbase_transaction = TransactionManager::create_coinbase_transaction(
-            coinbase_address.id(),
-            BLOCKCHAIN_COINBASE_BLOCK_FEE,
-        );
+        let coinbase_account: &Account;
+        let coinbase_address: &Address;
+        let coinbase_transaction: Transaction;
+
+        {
+            let wallet_lock = self.wallet.lock().await;
+            coinbase_account = wallet_lock
+                .accounts()
+                .first()
+                .expect("No coinbase error available.");
+            coinbase_address = coinbase_account.address();
+            coinbase_transaction = TransactionManager::create_coinbase_transaction(
+                coinbase_address.id(),
+                BLOCKCHAIN_COINBASE_BLOCK_FEE,
+            );
+        }
 
         // Get all transactions for the block
         let transactions = vec![coinbase_transaction];
@@ -292,11 +312,6 @@ impl Blockchain {
         self.blocks.clone()
     }
 
-    /// Returns copy of the blocks
-    pub fn listener(&self) -> &BlockchainListener {
-        self.listener.as_ref().unwrap()
-    }
-
     fn reward_block_finder(&mut self, block: &Block) {
         let coinbase_transaction = block
             .body()
@@ -354,10 +369,8 @@ impl Blockchain {
         self.blocks.push(block);
     }
 
-    async fn shutdown(&mut self) {
-        if let Some(listener) = &mut self.listener {
-            listener.shutdown().await
-        }
+    pub async fn shutdown(&mut self) {
+        self.listener.shutdown();
     }
 }
 
