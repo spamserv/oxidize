@@ -5,29 +5,32 @@ use tokio::sync::{mpsc, Mutex as AsyncMutex};
 use tokio::task::JoinHandle;
 
 // WebSocket Server - Responsible only for creating and managing the listener
-struct WebSocketServer {
+#[derive(Debug, Clone)]
+pub struct WebSocketServer {
+    address: String,
     shutdown_tx: mpsc::Sender<()>,
     shutdown_rx: Arc<AsyncMutex<mpsc::Receiver<()>>>,
-    server_handle: Option<JoinHandle<()>>,
+    server_handle: Arc<AsyncMutex<Option<JoinHandle<()>>>>,
 }
 
 impl WebSocketServer {
-    fn new() -> Self {
+    pub fn new(address: &str) -> Self {
         let (shutdown_tx, shutdown_rx) = mpsc::channel(1);
 
         Self {
+            address: address.to_string(),
             shutdown_tx,
             shutdown_rx: Arc::new(AsyncMutex::new(shutdown_rx)),
-            server_handle: None,
+            server_handle: Arc::new(AsyncMutex::new(None)),
         }
     }
 
     // Create listener and pass it to the service listener
-    async fn start<F>(&mut self, addr: &str, connection_handler: F) -> Result<()>
+    pub async fn start<F>(&mut self, connection_handler: F) -> Result<()>
     where
         F: Fn(TcpStream) -> () + Send + Sync + 'static + Clone,
     {
-        let listener = TcpListener::bind(addr)
+        let listener = TcpListener::bind(&self.address)
             .await
             .context("Failed to bind WebSocket server")?;
 
@@ -70,14 +73,14 @@ impl WebSocketServer {
             }
         });
 
-        self.server_handle = Some(server_handle);
+        self.server_handle = Arc::new(AsyncMutex::new(Some(server_handle)));
         Ok(())
     }
 
-    async fn shutdown(&mut self) {
+    pub async fn shutdown(&mut self) {
         let _ = self.shutdown_tx.send(()).await;
 
-        if let Some(handle) = self.server_handle.take() {
+        if let Some(handle) = self.server_handle.lock().await.take() {
             let _ = handle.await;
         }
     }
