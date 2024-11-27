@@ -29,7 +29,7 @@ pub struct Blockchain {
     ledger: Vec<Transaction>, // The blockchain ledger keeps track of every transaction and the issuance of new coins through coinbase transactions.
     config: BlockchainConfig,
     wallet: Wallet,
-    listener: Option<BlockchainListener>,
+    listener: BlockchainListener,
 }
 
 impl Clone for Blockchain {
@@ -41,7 +41,7 @@ impl Clone for Blockchain {
             ledger: self.ledger.clone(), // The blockchain ledger keeps track of every transaction and the issuance of new coins through coinbase transactions.
             config: self.config.clone(),
             wallet: self.wallet.clone(),
-            listener: None
+            listener: self.listener.clone()
         }
     }
 }
@@ -75,9 +75,11 @@ impl Blockchain {
     pub async fn build(config: BlockchainConfig) -> Result<Self, Box<dyn Error>> {
 
         // Websocket server for wallets to connect
-        let listener = Some(BlockchainListener::run(config.addr.to_string()));
+        let listener = 
+            Some(BlockchainListener::run(config.addr.to_string()))
+            .unwrap().await;
 
-        let mut wallet = Wallet::new("MiningFeeWallet#1".to_string()).await?;
+        let mut wallet = Wallet::new("MiningFeeWallet#1".to_string(), config.addr).await?;
 
         wallet.create_new_account();
         let coinbase_account = wallet
@@ -288,6 +290,11 @@ impl Blockchain {
     /// Returns copy of the blocks
     pub fn blocks(&self) -> Vec<Block> {
         self.blocks.clone()
+    }
+
+    /// Returns copy of the blocks
+    pub fn listener(&self) -> &BlockchainListener {
+        self.listener.as_ref().unwrap()
     }
 
     fn reward_block_finder(&mut self, block: &Block) {

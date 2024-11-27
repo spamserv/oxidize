@@ -26,12 +26,12 @@ pub struct Wallet {
 
 impl Wallet {
     /// Creates new wallet & generates key pair
-    pub async fn new(name: String) -> Result<Self, Box<dyn Error>> {
+    pub async fn new(name: String, ws_uri: String) -> Result<Self, Box<dyn Error>> {
         let created_at = Utc::now().to_rfc3339();
         let accounts = vec![];
         let (public_key, private_key) = Wallet::generate_key_pair().unwrap();
         let id = "".to_string();
-        let ws = WalletClient::new(WEBSOCKET_URI.to_string()).await?;
+        let ws = WalletClient::new(ws_uri.to_string()).await?;
         // Lets wait for the full blockchain init before sending messages.
         // ws.send_message(NodeMessageType::Balance { balance: 24 }).await?;
 

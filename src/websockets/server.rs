@@ -1,80 +1,84 @@
-use std::sync::{Arc};
+use anyhow::{Context, Result};
+use std::sync::Arc;
+use tokio::net::{TcpListener, TcpStream};
+use tokio::sync::{mpsc, Mutex as AsyncMutex};
+use tokio::task::JoinHandle;
 
-use colored::Colorize;
-use futures_util::{SinkExt, StreamExt};
-use tokio::{net::TcpListener, sync::{mpsc, oneshot, Mutex}};
-use tokio_tungstenite::{accept_async, tungstenite::Message};
-
-pub struct WebSocketServer {
-    clients: Arc<Mutex<Vec<mpsc::Sender<String>>>>,
+// WebSocket Server - Responsible only for creating and managing the listener
+struct WebSocketServer {
+    shutdown_tx: mpsc::Sender<()>,
+    shutdown_rx: Arc<AsyncMutex<mpsc::Receiver<()>>>,
+    server_handle: Option<JoinHandle<()>>,
 }
 
 impl WebSocketServer {
-    pub fn new() -> Self {
+    fn new() -> Self {
+        let (shutdown_tx, shutdown_rx) = mpsc::channel(1);
+
         Self {
-            clients: Arc::new(Mutex::new(Vec::new())),
+            shutdown_tx,
+            shutdown_rx: Arc::new(AsyncMutex::new(shutdown_rx)),
+            server_handle: None,
         }
     }
 
-    pub async fn run<F, Fut>(
-        &self, 
-        addr: &str, 
-        on_client_message: F,
-        mut shutdown_rx: oneshot::Receiver<()>
-    ) -> Result<(), Box<dyn std::error::Error>>
+    // Create listener and pass it to the service listener
+    async fn start<F>(&mut self, addr: &str, connection_handler: F) -> Result<()>
     where
-        F: Fn(String) -> Fut + Send + Sync + 'static,
-        Fut: std::future::Future<Output = ()> + Send + 'static,
+        F: Fn(TcpStream) -> () + Send + Sync + 'static + Clone,
     {
-        let listener = TcpListener::bind(addr).await?;
-        println!("[Server] Listening on {:?}", listener.local_addr());
+        let listener = TcpListener::bind(addr)
+            .await
+            .context("Failed to bind WebSocket server")?;
 
-        let on_client_message = Arc::new(on_client_message);
-        let clients = Arc::clone(&self.clients);
+        let shutdown_tx = self.shutdown_tx.clone();
+        let shutdown_rx = self.shutdown_rx.clone();
 
-        tokio::select! {
-            result = self.accept_connections(listener, on_client_message, clients) => {
-                if let Err(e) = result {
-                    eprintln!("Server error: {}", e);
+        let handler = connection_handler.clone();
+
+        let server_handle = tokio::spawn(async move {
+            /*
+                What I learnt here:
+                - The problem here is that shutdown_rx is borrowed across an asynchronous boundary 
+                (inside tokio::spawn), but its lifetime cannot satisfy the 'static requirement. 
+                This occurs because tokio::spawn requires all captured variables to have a 'static lifetime,
+                meaning they must either be owned or not reference local variables directly.
+
+                To fix this, you can clone the shutdown_rx before passing it into the tokio::spawn closure, 
+                ensuring that the borrowed value isn't tied to the local scope.
+                Also, declare the shutdown_rx_locked to ensure it is owned by the thread and lives long enough. 
+             */
+            let mut shutdown_rx_locked = shutdown_rx.lock().await;
+
+            tokio::select! {
+                _ = async {
+                    loop {
+                        match listener.accept().await {
+                            Ok((stream, _)) => {
+                                // Call the connection handler with the stream
+                                handler(stream);
+                            },
+                            Err(e) => {
+                                eprintln!("Accept error: {}", e);
+                            }
+                        }
+                    }
+                } => {},
+                _ = shutdown_rx_locked.recv() => {
+                    println!("WebSocket server shutting down");
                 }
             }
-            _ = &mut shutdown_rx => {
-                println!("Received shutdown signal");
-            }
-        }
+        });
 
+        self.server_handle = Some(server_handle);
         Ok(())
     }
 
-    async fn accept_connections<F, Fut>(
-        &self,
-        listener: TcpListener,
-        on_client_message: Arc<F>,
-        clients: Arc<Mutex<Vec<mpsc::Sender<String>>>>
-    ) -> Result<(), Box<dyn std::error::Error>>
-    where
-        F: Fn(String) -> Fut + Send + Sync + 'static,
-        Fut: std::future::Future<Output = ()> + Send + 'static,
-    {
-        loop {
-            let (stream, addr) = listener.accept().await?;
-            println!("{} {}", "[Server] New connection from: ".blue().bold(), addr.to_string().yellow());
-            
-            let ws_stream = accept_async(stream).await?;
-            let (mut write, mut read) = ws_stream.split();
+    async fn shutdown(&mut self) {
+        let _ = self.shutdown_tx.send(()).await;
 
-            // Create a channel for sending messages to the client
-            let (tx, mut rx) = mpsc::channel(10);
-            clients.lock().await.push(tx);
-
-            // Spawn a task to handle incoming messages from the client
-            let on_client_message = Arc::clone(&on_client_message);
-            tokio::spawn(async move {
-                while let Some(Ok(Message::Text(msg))) = read.next().await {
-                    println!("{} {}: {}", "[Server] Received from: ".blue().bold(), addr.to_string().yellow(), msg.yellow());
-                    (on_client_message)(msg).await;
-                }
-            });
+        if let Some(handle) = self.server_handle.take() {
+            let _ = handle.await;
         }
     }
 }

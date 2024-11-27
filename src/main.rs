@@ -15,6 +15,8 @@ async fn main() {
     println!("{}", "Initiated blockchain, with genesis block".bold().green());
     dbg!(node.config());
 
+    // let ws_port = node.config().
+
     println!("Creating {} blocks", NUMBER_OF_BLOCKS);
     for _ in 1..=NUMBER_OF_BLOCKS {
         node.add_block();
@@ -44,7 +46,7 @@ async fn main() {
     }
 
     println!("{}", "Creating 2 wallets".bold());
-    let mut wallet1 = Wallet::new("Wallet#1".to_string())
+    let mut wallet1 = Wallet::new("Wallet#1".to_string(), )
         .await
         .expect("Cannot create wallet.");
     wallet1.create_new_account();
