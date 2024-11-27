@@ -180,14 +180,25 @@ Beyond cryptographic integrity, there should be a consenus mechanism to check fo
 ## Mods / Crates
 
 ### blockchain
-Consists of blockchain, wallet, address.
+Consists of blockchain, block, blockchain_listener.
 
-### helpers
-Has helper functions
+### config
+Includes configuration constants.
+
+### transaction
+Consists of Transaction definition, Header, Body (Input, Output, Metadata), and has blueprint for TransactionManager that will create transactions and track status of a transaction.
+
+### utils
+Has helper functions for hash and transactions.
+
+### wallet
+Includes Wallet, WalletClient to connect to the Node, Accounts, Addresses, Wallet Message types to exchange with the Node. 
+
+### websockets
+Includes WebSocketClient and WebSocketServer implementation for various stuff.
 
 ## Tests
 At one point, you should be able to run tests per crate. TBD
-
 
 So far so good. Probably ton of refactoring coming in place.
 
