@@ -3,14 +3,13 @@
 //! - account creation
 //! - address generation and validation
 
-use std::{error::Error, thread::sleep, time};
+use std::error::Error;
 
 use hdwallet::{secp256k1::{PublicKey, SecretKey}, ExtendedPrivKey, ExtendedPubKey};
 use chrono::Utc;
 use bip39::{Mnemonic, Language};
 
-use crate::{config::WEBSOCKET_URI, websockets::WebSocketClient};
-use super::{wallet_message::{NodeMessageType, WalletMessage}, Account, WalletClient};
+use super::{Account, WalletClient};
 
 /// Wallet struct, used for storing accounts and key pair
 #[derive(Debug, Clone)]
@@ -26,16 +25,16 @@ pub struct Wallet {
 
 impl Wallet {
     /// Creates new wallet & generates key pair
-    pub async fn new(name: String, ws_uri: String) -> Result<Self, Box<dyn Error>> {
+    pub fn new(name: String, ws_uri: String) -> Self {
         let created_at = Utc::now().to_rfc3339();
         let accounts = vec![];
         let (public_key, private_key) = Wallet::generate_key_pair().unwrap();
         let id = "".to_string();
-        let ws = WalletClient::new(ws_uri.to_string()).await?;
+        let ws = WalletClient::new(ws_uri.to_string());
         // Lets wait for the full blockchain init before sending messages.
         // ws.send_message(NodeMessageType::Balance { balance: 24 }).await?;
 
-        Ok(Self {
+        Self {
             id,
             public_key,
             private_key,
@@ -43,7 +42,12 @@ impl Wallet {
             accounts,
             name,
             ws
-        })
+        }
+    }
+
+    pub async fn connect(&mut self) -> Result<(), Box<dyn Error>> {
+        self.ws.connect().await?;
+        Ok(())
     }
 
     /// Create new account for the wallet, based on the `public_key`
