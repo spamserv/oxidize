@@ -8,6 +8,8 @@ use tokio::{
 };
 use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream, WebSocketStream};
 
+use crate::websockets::{SubscriptionMessage, SubscriptionTopic};
+
 #[derive(Debug, Clone)]
 pub struct WebSocketClient {
     pub ws_stream: Arc<Mutex<WebSocketStream<MaybeTlsStream<TcpStream>>>>,
@@ -21,9 +23,19 @@ impl WebSocketClient {
         let (mut ws_stream, _) = connect_async(url_string).await?;
         println!("{}", "[Client] Connected to the server".blue());
 
-        // Send a message to the server
-        let message = "Hello, server!".to_string();
-        ws_stream.send(Message::Text(message)).await?;
+        // Send a message to the server (not a valid message any more, expecting SubscriptionMessage)
+        // let message = "Hello, server!".to_string();
+        // ws_stream.send(Message::Text(message)).await?;
+
+        // Subscribe to WalletBalance changes
+        let message = SubscriptionMessage {
+            action: "subscribe".to_string(),
+            topic: SubscriptionTopic::WalletBalance
+        };
+
+        let serialized_message = serde_json::to_string(&message)?;
+
+        ws_stream.send(Message::Text(serialized_message)).await?;
 
         Ok(Self {
             ws_stream: Arc::new(Mutex::new(ws_stream)),
