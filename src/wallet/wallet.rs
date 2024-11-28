@@ -20,7 +20,7 @@ pub struct Wallet {
     pub accounts: Vec<Account>,
     public_key: PublicKey,
     private_key: SecretKey,
-    ws: WalletClient // Used for testing, idea is not to store it in the future
+    ws: WalletClient, // Used for testing, idea is not to store it in the future
 }
 
 impl Wallet {

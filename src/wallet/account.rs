@@ -7,9 +7,10 @@ use crate::transaction::Transaction;
 use super::Address;
 
 /// Account struct, used to store transaction history, address.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Account {
     address: Address,
+    balance: u64,
     created_at: String,
     transaction_history: Vec<Transaction>,
 }
@@ -28,7 +29,8 @@ impl Account {
         Self {
             created_at,
             address,
-            transaction_history
+            transaction_history,
+            balance: 0
         }
     }
 
