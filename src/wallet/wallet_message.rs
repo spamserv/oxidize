@@ -18,6 +18,12 @@ impl WalletMessagePayload for WalletMessageType {}
 impl WalletMessagePayload for NodeMessageType {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum WalletMessageDirection {
+    ServerToClient,
+    ClientToServer,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WalletMessage<T>
 where
     T: WalletMessagePayload,
@@ -26,10 +32,4 @@ where
     account_id: String,
     direction: WalletMessageDirection,
     pub payload: T,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum WalletMessageDirection {
-    ServerToClient,
-    ClientToServer,
 }
