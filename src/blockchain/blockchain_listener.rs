@@ -1,11 +1,11 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{wallet::Wallet, websockets::{subscription_manager::ClientId, SubscriptionManager, SubscriptionMessage, SubscriptionTopic, WebSocketServer}};
+use crate::{wallet::{Wallet, WalletMessage, WalletMessagePayload}, websockets::{subscription_manager::ClientId, SubscriptionManager, SubscriptionMessage, SubscriptionTopic, WebSocketServer}};
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use tokio::{net::TcpStream, sync::{oneshot, Mutex, RwLock}, task::JoinHandle};
 use tokio_tungstenite::{accept_async, tungstenite::Message, WebSocketStream};
-use anyhow::Result;
+use anyhow::{Error, Result};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum BlockchainWebsocketMessage {
@@ -71,6 +71,7 @@ impl BlockchainListener {
 
             while let Some(msg) = websocket.next().await {
                 match msg {
+
                     Ok(Message::Text(text)) => {
                         // Attempt to deserialize the text into a SubscriptionMessage
                         match serde_json::from_str::<SubscriptionMessage>(&text) {
@@ -117,6 +118,21 @@ impl BlockchainListener {
                 }
             }
         })
+    }
+
+    async fn broadcast_to_topic<T>(&self, topic: &SubscriptionTopic, message: WalletMessage<T>) -> Result<(), Error> where T: WalletMessagePayload{ 
+        let subscribers = self.subscription_manager.get_subscribers(topic).await;
+        let websocket_clients = &mut self.websocket_clients.write().await;
+        let serialized_message = serde_json::to_string(&message)?;
+
+        for subscriber in subscribers {
+            if let Some(websocket_client) = websocket_clients.get_mut(&subscriber) {
+                websocket_client.send(Message::Text(serialized_message.clone())).await?;
+            }
+            
+            
+        }   
+        Ok(())
     }
 
     pub async fn shutdown(&mut self) {

@@ -17,6 +17,7 @@ pub trait WalletMessagePayload: Serialize {}
 impl WalletMessagePayload for WalletMessageType {}
 impl WalletMessagePayload for NodeMessageType {}
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WalletMessage<T>
 where
     T: WalletMessagePayload,
@@ -27,7 +28,7 @@ where
     pub payload: T,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum WalletMessageDirection {
     ServerToClient,
     ClientToServer,

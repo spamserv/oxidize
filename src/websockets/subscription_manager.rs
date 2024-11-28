@@ -5,10 +5,11 @@ use tokio::sync::RwLock;
 use super::SubscriptionTopic;
 
 pub type ClientId = String;
+pub type Subscribers = Arc<RwLock<HashMap<SubscriptionTopic, Vec<ClientId>>>>;
 
 #[derive(Debug, Clone)]
 pub struct SubscriptionManager {
-    subscribers: Arc<RwLock<HashMap<SubscriptionTopic, Vec<ClientId>>>>,
+    subscribers: Subscribers,
 }
 
 impl SubscriptionManager {
