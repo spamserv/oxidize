@@ -2,11 +2,6 @@ use crate::transaction::Transaction;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum WalletMessageType {
-    TransactionSend { transactions: Transaction }, // Sends a new transaction to the server "node"
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MessagePayload {
     TransactionSend { transactions: Transaction },
     Balance { balance: u64 }, // Sends balance from server "node" to client

@@ -77,7 +77,7 @@ impl Blockchain {
         ));
 
         // Websocket server for wallets to connect
-        let mut listener = BlockchainListener::new(config.addr.to_string(), wallet.clone()).await;
+        let listener = BlockchainListener::new(config.addr.to_string(), wallet.clone()).await;
         listener.start().await?;
         // let listener =
         //     Some(BlockchainListener::run(config.addr.to_string()))

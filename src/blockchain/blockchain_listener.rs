@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{wallet::{Wallet, WalletMessage, WalletMessagePayload}, websockets::{subscription_manager::ClientId, SubscriptionManager, SubscriptionMessage, SubscriptionTopic, WebSocketServer}};
+use crate::{wallet::{MessagePayload, Wallet, WalletMessage, WalletMessageDirection, WalletMessagePayload}, websockets::{subscription_manager::ClientId, SubscriptionManager, SubscriptionMessage, SubscriptionTopic, WebSocketServer}};
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use tokio::{net::TcpStream, sync::{oneshot, Mutex, RwLock}, task::JoinHandle};
@@ -19,7 +19,7 @@ pub enum BlockchainWebsocketMessage {
 #[derive(Debug, Clone)]
 pub struct BlockchainListener {
     address: String,
-    websocket_server: WebSocketServer,
+    websocket_server: Arc<Mutex<WebSocketServer>>,
     wallet: Arc<Mutex<Wallet>>,
     subscription_manager: Arc<SubscriptionManager>,
     websocket_clients: Arc<RwLock<HashMap<ClientId, WebSocketStream<TcpStream>>>>
@@ -33,19 +33,21 @@ impl BlockchainListener {
 
         Self {
             address,
-            websocket_server: server.clone(),
+            websocket_server: Arc::new(Mutex::new(server)),
             wallet,
             subscription_manager: Arc::new(SubscriptionManager::new()),
             websocket_clients: Arc::new(RwLock::new(HashMap::new()))
         }
     }
 
-    pub async fn start(&mut self) -> Result<()> {
+    pub async fn start( &self) -> Result<()> {
         // Start WebSocket server with connection handler
-        let this = self.clone();
-        self.websocket_server.start( move |stream| {
+        let this = Arc::new(self.clone());
+        let mut websocket_server = self.websocket_server.lock().await;
+        websocket_server.start( move |stream| {
             // Use service listener to handle each connection
-            this.handle_connection(stream);
+            let this_clone = Arc::clone(&this);
+            this_clone.handle_connection(stream);
         }).await?;
 
         Ok(())
@@ -55,6 +57,12 @@ impl BlockchainListener {
         // Clone wallets for use in async block
         let wallets = Arc::clone(&self.wallet);
         let subscription_manager = Arc::clone(&self.subscription_manager);
+        
+        /*
+            You have to create new atomically reference counted instance because it is used 
+            by tokio tasks and consumed by it, so lifetimes aren't matched otherwise.
+        */  
+        let this = Arc::new(self.clone());
 
         // Spawn task for each connection
         tokio::spawn(async move {
@@ -87,6 +95,11 @@ impl BlockchainListener {
                                     subscription_manager
                                         .subscribe(client_id.clone(), SubscriptionTopic::WalletBalance)
                                         .await;
+
+                                    let payload = MessagePayload::Balance { balance: 65 };
+                                    let message = WalletMessage::new("request_id".to_string(), "account_id".to_string(), WalletMessageDirection::ServerToClient, payload);
+
+                                    this.broadcast_to_topic(SubscriptionTopic::WalletBalance, message).await;
                                 }
                                 SubscriptionTopic::BlockchainStatus => {
                                     println!("Client {} subscribed to Blockchain Status", client_id);
@@ -120,8 +133,8 @@ impl BlockchainListener {
         })
     }
 
-    async fn broadcast_to_topic<T>(&self, topic: &SubscriptionTopic, message: WalletMessage<T>) -> Result<(), Error> where T: WalletMessagePayload{ 
-        let subscribers = self.subscription_manager.get_subscribers(topic).await;
+    async fn broadcast_to_topic<T>(&self, topic: SubscriptionTopic, message: WalletMessage<T>) -> Result<(), Error> where T: WalletMessagePayload{ 
+        let subscribers = self.subscription_manager.get_subscribers(&topic).await;
         let websocket_clients = &mut self.websocket_clients.write().await;
         let serialized_message = serde_json::to_string(&message)?;
 
@@ -136,7 +149,8 @@ impl BlockchainListener {
     }
 
     pub async fn shutdown(&mut self) {
-        self.websocket_server.shutdown().await;
+        let mut websocket_server_mutex = self.websocket_server.lock().await;
+        websocket_server_mutex.shutdown().await;
     }
 
 }
