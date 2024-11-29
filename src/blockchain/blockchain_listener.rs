@@ -22,7 +22,7 @@ pub struct BlockchainListener {
     websocket_server: Arc<Mutex<WebSocketServer>>,
     wallet: Arc<Mutex<Wallet>>,
     subscription_manager: Arc<SubscriptionManager>,
-    websocket_clients: Arc<RwLock<HashMap<ClientId, WebSocketStream<TcpStream>>>>
+    websocket_clients: Arc<RwLock<HashMap<ClientId, Arc<Mutex<WebSocketStream<TcpStream>>>>>>
 }
 
 impl BlockchainListener {
@@ -67,7 +67,7 @@ impl BlockchainListener {
         // Spawn task for each connection
         tokio::spawn(async move {
             // Upgrade to WebSocket
-            let mut websocket = match accept_async(stream).await {
+            let websocket = match accept_async(stream).await {
                 Ok(ws) => ws,
                 Err(e) => {
                     eprintln!("WebSocket accept error: {}", e);
@@ -76,8 +76,11 @@ impl BlockchainListener {
             };
 
             let client_id = uuid::Uuid::new_v4().to_string();
+            let websocket = Arc::new(Mutex::new(websocket));
+            
+            this.add_client(client_id.clone(), Arc::clone(&websocket)).await;
 
-            while let Some(msg) = websocket.next().await {
+            while let Some(msg) = websocket.lock().await.next().await {
                 println!("{:?}",msg);
                 match msg {
 
@@ -134,19 +137,29 @@ impl BlockchainListener {
         })
     }
 
+    async fn add_client(&self, client_id: ClientId, websocket: Arc<Mutex<WebSocketStream<TcpStream>>>) {
+        let mut websocket_clients = self.websocket_clients.write().await;
+        websocket_clients.entry(client_id.clone()).or_insert(websocket);
+        println!("{} {} {}", "Client ", client_id, "joined.");
+    }
+
+    async fn remove_client(&self, client_id: ClientId) {
+        let mut websocket_clients = self.websocket_clients.write().await;
+        websocket_clients.remove_entry(&client_id);
+        println!("{} {} {}", "Client ", client_id, "left.");
+    }
+
     async fn broadcast_to_topic<T>(&self, topic: SubscriptionTopic, message: WalletMessage<T>) -> Result<(), Error> where T: WalletMessagePayload{ 
         let subscribers = self.subscription_manager.get_subscribers(&topic).await;
-        let websocket_clients = &mut self.websocket_clients.write().await;
+        let mut websocket_clients = self.websocket_clients.write().await;
         let serialized_message = serde_json::to_string(&message)?;
         println!("{:?}", websocket_clients);
         // TODO: Check why websocket_clients aren't stored properly
         for subscriber in subscribers {
             if let Some(websocket_client) = websocket_clients.get_mut(&subscriber) {
-                websocket_client.send(Message::Text(serialized_message.clone())).await?;
+                websocket_client.lock().await.send(Message::Text(serialized_message.clone())).await?;
                 println!("Sent!");
             }
-            
-            
         }   
         Ok(())
     }
