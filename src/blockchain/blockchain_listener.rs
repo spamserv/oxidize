@@ -78,6 +78,7 @@ impl BlockchainListener {
             let client_id = uuid::Uuid::new_v4().to_string();
 
             while let Some(msg) = websocket.next().await {
+                println!("{:?}",msg);
                 match msg {
 
                     Ok(Message::Text(text)) => {
@@ -137,10 +138,12 @@ impl BlockchainListener {
         let subscribers = self.subscription_manager.get_subscribers(&topic).await;
         let websocket_clients = &mut self.websocket_clients.write().await;
         let serialized_message = serde_json::to_string(&message)?;
-
+        println!("{:?}", websocket_clients);
+        // TODO: Check why websocket_clients aren't stored properly
         for subscriber in subscribers {
             if let Some(websocket_client) = websocket_clients.get_mut(&subscriber) {
                 websocket_client.send(Message::Text(serialized_message.clone())).await?;
+                println!("Sent!");
             }
             
             

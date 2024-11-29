@@ -12,7 +12,9 @@ use hdwallet::{
     ExtendedPrivKey, ExtendedPubKey,
 };
 
-use super::{Account, WalletClient};
+use crate::websockets::{SubscriptionMessage, SubscriptionTopic};
+
+use super::{Account, WalletClient, WalletMessage};
 
 /// Wallet struct, used for storing accounts and key pair
 #[derive(Debug, Clone)]
@@ -50,6 +52,19 @@ impl Wallet {
 
     pub async fn connect(&mut self) -> Result<(), Box<dyn Error>> {
         self.ws.connect().await?;
+
+        // Subscribe to WalletBalance changes
+        let message = SubscriptionMessage {
+            action: "subscribe".to_string(),
+            topic: SubscriptionTopic::WalletBalance
+        };
+
+        self.ws.send_message(message).await?;
+
+        self.ws.start_receiving(|message| {
+            println!("Received message: {}", message);
+        }).await?;
+        
         Ok(())
     }
 

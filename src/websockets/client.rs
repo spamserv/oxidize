@@ -1,11 +1,14 @@
 use std::{error::Error, sync::Arc};
 
 use colored::Colorize;
+use futures_util::SinkExt;
 use tokio::{
     net::TcpStream,
     sync::Mutex,
 };
-use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
+use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream, WebSocketStream};
+
+use crate::websockets::{SubscriptionMessage, SubscriptionTopic};
 
 #[derive(Debug, Clone)]
 pub struct WebSocketClient {
@@ -17,10 +20,10 @@ impl WebSocketClient {
         let url_string = format!("ws://{address}");
 
         // Connect to the WebSocket server
-        let (ws_stream, _) = connect_async(url_string).await?;
+        let (mut ws_stream, _) = connect_async(url_string).await?;
         println!("{}", "[Client] Connected to the server".blue());
 
-        // Subscribe to WalletBalance changes
+        // // Subscribe to WalletBalance changes
         // let message = SubscriptionMessage {
         //     action: "subscribe".to_string(),
         //     topic: SubscriptionTopic::WalletBalance
