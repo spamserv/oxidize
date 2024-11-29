@@ -7,15 +7,15 @@ pub enum WalletMessageType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum NodeMessageType {
+pub enum MessagePayload {
+    TransactionSend { transactions: Transaction },
     Balance { balance: u64 }, // Sends balance from server "node" to client
     TransactionHistory { transactions: Vec<Transaction> }, // Sends transaction history from server "node" to client
 }
 
 pub trait WalletMessagePayload: Serialize {}
 
-impl WalletMessagePayload for WalletMessageType {}
-impl WalletMessagePayload for NodeMessageType {}
+impl WalletMessagePayload for MessagePayload {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum WalletMessageDirection {
@@ -32,4 +32,23 @@ where
     account_id: String,
     direction: WalletMessageDirection,
     pub payload: T,
+}
+
+impl<T> WalletMessage<T>
+where
+    T: WalletMessagePayload,
+{
+    pub fn new(
+        request_id: String,
+        account_id: String,
+        direction: WalletMessageDirection,
+        payload: T,
+    ) -> Self {
+        WalletMessage {
+            request_id,
+            account_id,
+            direction,
+            payload,
+        }
+    }
 }
