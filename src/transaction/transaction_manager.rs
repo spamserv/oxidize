@@ -2,7 +2,7 @@
 //! - creating and signing the transaction
 //! - calculating transaction fee
 //! - building the transaction from scratch (inputs, outputs, validation)
-//! 
+//!
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -24,24 +24,24 @@ impl Transaction {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionInput {
-    pub previous_tx_hash: String,  // Hash of the previous transaction
-    pub index: u32,                // Index of the output being used
-    pub signature: String,         // Signature for authorization
-    pub amount: u64
+    pub previous_tx_hash: String, // Hash of the previous transaction
+    pub index: u32,               // Index of the output being used
+    pub signature: String,        // Signature for authorization
+    pub amount: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionOutput {
-    pub recipient_address: String,  // The address of the recipient
-    pub amount: u64,                // The amount of currency being sent
+    pub recipient_address: String, // The address of the recipient
+    pub amount: u64,               // The amount of currency being sent
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct TransactionMetadata {
     transaction_id: String,
     timestamp: String,
-    status: TransactionStatus, 
-    r#type: TransactionType
+    status: TransactionStatus,
+    r#type: TransactionType,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -54,8 +54,8 @@ pub enum TransactionStatus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TransactionType {
     Coinbase, // For mining a new block, does not get put into UTXO
-    Fee, // For transaction fees
-    Regular // P2P
+    Fee,      // For transaction fees
+    Regular,  // P2P
 }
 
 pub enum TransactionError {
@@ -72,10 +72,10 @@ impl TransactionManager {
     pub fn create_transaction(&self, recipient: &str, amount: u64) -> Transaction {
         todo!()
     }
-    
+
     pub fn create_coinbase_transaction(recipient: &str, amount: u64) -> Transaction {
         let inputs = vec![];
-        let transaction_output = TransactionOutput{
+        let transaction_output = TransactionOutput {
             amount,
             recipient_address: recipient.to_string(),
         };
@@ -84,20 +84,21 @@ impl TransactionManager {
         let timestamp = Utc::now().to_rfc3339();
         let status = TransactionStatus::Pending;
 
-        let transaction_id = TransactionHelper::generate_transaction_id(&inputs, &outputs, &timestamp, &status);
+        let transaction_id =
+            TransactionHelper::generate_transaction_id(&inputs, &outputs, &timestamp, &status);
         let r#type = TransactionType::Coinbase;
 
         let metadata = TransactionMetadata {
             timestamp,
             status,
             transaction_id,
-            r#type
+            r#type,
         };
 
         Transaction {
             inputs,
             outputs,
-            metadata
+            metadata,
         }
     }
 

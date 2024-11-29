@@ -99,7 +99,7 @@ impl BlockchainListener {
                                     let payload = MessagePayload::Balance { balance: 65 };
                                     let message = WalletMessage::new("request_id".to_string(), "account_id".to_string(), WalletMessageDirection::ServerToClient, payload);
 
-                                    this.broadcast_to_topic(SubscriptionTopic::WalletBalance, message).await;
+                                    let _ = this.broadcast_to_topic(SubscriptionTopic::WalletBalance, message).await;
                                 }
                                 SubscriptionTopic::BlockchainStatus => {
                                     println!("Client {} subscribed to Blockchain Status", client_id);

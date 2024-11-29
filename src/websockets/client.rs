@@ -1,14 +1,11 @@
 use std::{error::Error, sync::Arc};
 
 use colored::Colorize;
-use futures_util::SinkExt;
 use tokio::{
     net::TcpStream,
     sync::Mutex,
 };
-use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream, WebSocketStream};
-
-use crate::websockets::{SubscriptionMessage, SubscriptionTopic};
+use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 
 #[derive(Debug, Clone)]
 pub struct WebSocketClient {

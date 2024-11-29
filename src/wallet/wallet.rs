@@ -5,9 +5,12 @@
 
 use std::error::Error;
 
-use hdwallet::{secp256k1::{PublicKey, SecretKey}, ExtendedPrivKey, ExtendedPubKey};
+use bip39::{Language, Mnemonic};
 use chrono::Utc;
-use bip39::{Mnemonic, Language};
+use hdwallet::{
+    secp256k1::{PublicKey, SecretKey},
+    ExtendedPrivKey, ExtendedPubKey,
+};
 
 use super::{Account, WalletClient};
 
@@ -41,7 +44,7 @@ impl Wallet {
             created_at,
             accounts,
             name,
-            ws
+            ws,
         }
     }
 
@@ -62,21 +65,23 @@ impl Wallet {
         // Generate a mnemonic and seed
         let mut rng = bip39::rand::thread_rng();
         let mnemonic = Mnemonic::generate_in_with(&mut rng, Language::English, 24).unwrap();
-        let seed = mnemonic.to_seed("");  // Create the seed from the mnemonic
-    
+        let seed = mnemonic.to_seed(""); // Create the seed from the mnemonic
+
         // Attempt to create an ExtendedPrivKey from the seed
         let master_key = ExtendedPrivKey::with_seed(&seed);
-    
+
         // Check if the master key creation succeeded
         if let Ok(master_key) = master_key {
             // Derive child private and public keys if master key is created successfully
-            let child_priv_key = master_key.derive_private_key(hdwallet::KeyIndex::Normal(0)).unwrap();
+            let child_priv_key = master_key
+                .derive_private_key(hdwallet::KeyIndex::Normal(0))
+                .unwrap();
             let child_pub_key = ExtendedPubKey::from_private_key(&child_priv_key);
-    
+
             // Return the derived public key
             return Ok((child_pub_key.public_key, master_key.private_key));
         }
-    
+
         // If the master key creation failed, return an error
         Err("Cannot create master key from seed!".to_string())
     }

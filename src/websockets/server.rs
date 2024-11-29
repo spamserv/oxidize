@@ -41,16 +41,16 @@ impl WebSocketServer {
 
         let server_handle = tokio::spawn(async move {
             /*
-                What I learnt here:
-                - The problem here is that shutdown_rx is borrowed across an asynchronous boundary 
-                (inside tokio::spawn), but its lifetime cannot satisfy the 'static requirement. 
-                This occurs because tokio::spawn requires all captured variables to have a 'static lifetime,
-                meaning they must either be owned or not reference local variables directly.
+               What I learnt here:
+               - The problem here is that shutdown_rx is borrowed across an asynchronous boundary
+               (inside tokio::spawn), but its lifetime cannot satisfy the 'static requirement.
+               This occurs because tokio::spawn requires all captured variables to have a 'static lifetime,
+               meaning they must either be owned or not reference local variables directly.
 
-                To fix this, you can clone the shutdown_rx before passing it into the tokio::spawn closure, 
-                ensuring that the borrowed value isn't tied to the local scope.
-                Also, declare the shutdown_rx_locked to ensure it is owned by the thread and lives long enough. 
-             */
+               To fix this, you can clone the shutdown_rx before passing it into the tokio::spawn closure,
+               ensuring that the borrowed value isn't tied to the local scope.
+               Also, declare the shutdown_rx_locked to ensure it is owned by the thread and lives long enough.
+            */
             let mut shutdown_rx_locked = shutdown_rx.lock().await;
 
             tokio::select! {

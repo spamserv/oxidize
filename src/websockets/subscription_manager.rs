@@ -15,7 +15,7 @@ pub struct SubscriptionManager {
 impl SubscriptionManager {
     pub fn new() -> Self {
         Self {
-            subscribers: Arc::new(RwLock::new(HashMap::new()))
+            subscribers: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 

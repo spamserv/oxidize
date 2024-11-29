@@ -1,11 +1,15 @@
+use crate::{
+    config::{BLOCKCHAIN_INITIAL_DIFFICULTY, BLOCKCHAIN_INITIAL_NONCE},
+    transaction::Transaction,
+    utils::HashHelper,
+};
 use chrono::Utc;
 use thiserror::Error;
-use crate::{config::{BLOCKCHAIN_INITIAL_DIFFICULTY, BLOCKCHAIN_INITIAL_NONCE}, transaction::Transaction, utils::HashHelper};
 
 #[derive(Debug, Clone)]
 pub struct Block {
     pub header: BlockHeader,
-    pub body: BlockBody
+    pub body: BlockBody,
 }
 
 #[derive(Debug, Clone)]
@@ -19,7 +23,7 @@ pub struct BlockHeader {
 
 #[derive(Debug, Clone)]
 pub struct BlockBody {
-    pub transactions: Vec<Transaction>
+    pub transactions: Vec<Transaction>,
 }
 
 #[derive(Error, Debug)]
@@ -37,14 +41,17 @@ pub enum BlockValidationError {
     #[error("Block timestamp must be greater than previous block")]
     InvalidTimestamp,
     #[error("Hash `from_hash` index needs to be lower than `to_hash`")]
-    RangeIndexFault
+    RangeIndexFault,
 }
-
 
 impl Block {
     /// Generates a new block based on previous block hash, transactions that are meant to go into the block
-    /// and current blockchain difficulty 
-    pub fn new(previous_hash: &String, transactions: &Vec<Transaction>, blockchain_difficulty: u8) -> Self {
+    /// and current blockchain difficulty
+    pub fn new(
+        previous_hash: &String,
+        transactions: &Vec<Transaction>,
+        blockchain_difficulty: u8,
+    ) -> Self {
         Block::create_data_block(previous_hash, transactions, blockchain_difficulty)
     }
 
@@ -71,11 +78,17 @@ impl Block {
         let mut nonce = BLOCKCHAIN_INITIAL_NONCE;
         let mut hash_result;
         let blockchain_difficulty_str = "0".repeat(BLOCKCHAIN_INITIAL_DIFFICULTY as usize);
-        
+
         transactions.push(coinbase_transaction);
 
         loop {
-            hash_result = HashHelper::generate_hash(&previous_hash, BLOCKCHAIN_INITIAL_DIFFICULTY, &timestamp, &transactions, nonce);
+            hash_result = HashHelper::generate_hash(
+                &previous_hash,
+                BLOCKCHAIN_INITIAL_DIFFICULTY,
+                &timestamp,
+                &transactions,
+                nonce,
+            );
             if hash_result.starts_with(&blockchain_difficulty_str) {
                 break;
             }
@@ -87,17 +100,12 @@ impl Block {
             difficulty: BLOCKCHAIN_INITIAL_DIFFICULTY,
             nonce,
             timestamp,
-            current_hash: hash_result
+            current_hash: hash_result,
         };
 
-        let body = BlockBody {
-            transactions
-        };
+        let body = BlockBody { transactions };
 
-        Self {
-            header,
-            body
-        }
+        Self { header, body }
     }
 
     /// Crates data block, based on:
@@ -106,38 +114,44 @@ impl Block {
     /// - blockchain difficulty
     /// - transactions included in the block
     /// - nonce that is iterated until the blockchain difficulty is met
-    pub fn create_data_block(previous_hash: &String, transactions: &Vec<Transaction>, blockchain_difficulty: u8) -> Self {
+    pub fn create_data_block(
+        previous_hash: &String,
+        transactions: &Vec<Transaction>,
+        blockchain_difficulty: u8,
+    ) -> Self {
         let timestamp = Utc::now().to_rfc3339();
         let mut nonce = BLOCKCHAIN_INITIAL_NONCE;
         let mut hash_result;
         let blockchain_difficulty_str = "0".repeat(blockchain_difficulty as usize);
-        
+
         loop {
-            hash_result = HashHelper::generate_hash(previous_hash, blockchain_difficulty, &timestamp, transactions, nonce);
+            hash_result = HashHelper::generate_hash(
+                previous_hash,
+                blockchain_difficulty,
+                &timestamp,
+                transactions,
+                nonce,
+            );
             if hash_result.starts_with(&blockchain_difficulty_str) {
                 break;
             }
             nonce += 1
-        }    
+        }
 
         let header = BlockHeader {
             previous_hash: previous_hash.to_string(),
             difficulty: blockchain_difficulty,
             nonce,
             timestamp,
-            current_hash: hash_result
+            current_hash: hash_result,
         };
 
         let body = BlockBody {
-            transactions: transactions.to_vec()
+            transactions: transactions.to_vec(),
         };
 
-        Self {
-            header,
-            body
-        }
+        Self { header, body }
     }
-
 }
 
 /// BlockHeader structure
