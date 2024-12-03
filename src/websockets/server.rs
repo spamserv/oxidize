@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use futures_util::{SinkExt, StreamExt};
 use std::collections::HashMap;
 use std::pin::Pin;
@@ -10,6 +9,7 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 #[derive(Debug, Clone)]
 pub struct WebSocketServer {
     clients: Arc<Mutex<HashMap<usize, tokio::sync::mpsc::UnboundedSender<Message>>>>,
+    // TODO: Check if this is needed for broadcast/anycast
     broadcaster: broadcast::Sender<String>,
 }
 
@@ -72,7 +72,6 @@ impl WebSocketServer {
             });
         }
     }
-    
 
     pub async fn send(&self, client_id: usize, message: String) {
         if let Some(client) = self.clients.lock().await.get(&client_id) {
@@ -87,6 +86,6 @@ impl WebSocketServer {
     }
 
     pub async fn shutdown(&mut self) {
-
+        // TODO: Implement graceful shutdown
     }
 }

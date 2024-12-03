@@ -374,9 +374,9 @@ impl Blockchain {
         self.blocks.push(block);
     }
 
-    // pub async fn shutdown(&mut self) {
-    //     self.listener.shutdown();
-    // }
+    pub async fn shutdown(&mut self) {
+        //self.listener.shutdown();
+    }
 }
 
 #[cfg(test)]
@@ -404,7 +404,7 @@ mod tests {
         let mut node = build_blockchain().await;
 
         for _ in 1..=3 {
-            node.add_block();
+            node.add_block().await;
         }
 
         assert_eq!(node.blocks.len(), 3);
@@ -416,7 +416,7 @@ mod tests {
     async fn it_validates_single_blockchain_block() {
         let mut node = build_blockchain().await;
 
-        node.add_block();
+        node.add_block().await;
 
         let blocks = node.blocks().clone();
         let block_1 = blocks.get(0).unwrap().clone();
@@ -433,7 +433,7 @@ mod tests {
         let mut node = build_blockchain().await;
 
         for _ in 1..=5 {
-            node.add_block();
+            node.add_block().await;
         }
 
         let blocks = node.blocks().clone();
@@ -455,7 +455,7 @@ mod tests {
         let mut node = build_blockchain().await;
 
         for _ in 1..=5 {
-            node.add_block();
+            node.add_block().await;
         }
 
         let validation = node.validate_full_chain();
