@@ -1,11 +1,22 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{wallet::{MessagePayload, Wallet, WalletMessage, WalletMessageDirection, WalletMessagePayload}, websockets::{subscription_manager::ClientId, SubscriptionManager, SubscriptionMessage, SubscriptionTopic, WebSocketServer}};
+use crate::{
+    wallet::{MessagePayload, Wallet, WalletMessage, WalletMessageDirection, WalletMessagePayload},
+    websockets::{
+        subscription_manager::ClientId, SubscriptionManager, SubscriptionMessage,
+        SubscriptionTopic, WebSocketServer,
+    },
+};
+use anyhow::{Error, Result};
+use async_trait::async_trait;
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use tokio::{net::TcpStream, sync::{oneshot, Mutex, RwLock}, task::JoinHandle};
+use tokio::{
+    net::TcpStream,
+    sync::{broadcast, Mutex, RwLock},
+    task::JoinHandle,
+};
 use tokio_tungstenite::{accept_async, tungstenite::Message, WebSocketStream};
-use anyhow::{Error, Result};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum BlockchainWebsocketMessage {
@@ -13,77 +24,76 @@ pub enum BlockchainWebsocketMessage {
     QueryUtxo,
     WalletBalance,
     Ping,
-    Other
+    Other,
 }
 
 #[derive(Debug, Clone)]
 pub struct BlockchainListener {
-    address: String,
-    websocket_server: Arc<Mutex<WebSocketServer>>,
-    wallet: Arc<Mutex<Wallet>>,
-    subscription_manager: Arc<SubscriptionManager>,
-    websocket_clients: Arc<RwLock<HashMap<ClientId, Arc<Mutex<WebSocketStream<TcpStream>>>>>>
+    server: WebSocketServer,
 }
 
 impl BlockchainListener {
-    pub async fn new(address: String, wallet: Arc<Mutex<Wallet>>) -> Self {
-        let server = WebSocketServer::new(&address);
-
-        println!("Websocket initialized...");
-
+    pub fn new() -> Self {
         Self {
-            address,
-            websocket_server: Arc::new(Mutex::new(server)),
-            wallet,
-            subscription_manager: Arc::new(SubscriptionManager::new()),
-            websocket_clients: Arc::new(RwLock::new(HashMap::new()))
+            server: WebSocketServer::new(),
         }
     }
 
-    pub async fn start( &self) -> Result<()> {
-        // Start WebSocket server with connection handler
-        let this = Arc::new(self.clone());
-        let mut websocket_server = self.websocket_server.lock().await;
-        websocket_server.start( move |stream| {
-            // Use service listener to handle each connection
-            let this_clone = Arc::clone(&this);
-            this_clone.handle_connection(stream);
-        }).await?;
-
-        Ok(())
+    pub async fn run(&self, addr: &str) {
+        self.server
+            .run(addr, |message, client_id, clients| {
+                Box::pin(async move {
+                    println!("Message from client {}: {}", client_id, message);
+                    // Add custom blockchain-related message handling logic here
+                    if message == "block_update" {
+                        for (_, client) in clients.lock().await.iter() {
+                            let _ = client.send(Message::Text("New block!".to_string()));
+                        }
+                    }
+                })
+            })
+            .await;
     }
 
-    fn handle_connection(&self, stream: TcpStream) -> JoinHandle<()> {
+    pub async fn send(&self, client_id: usize, message: String) {
+        self.server.send(client_id, message).await;
+    }
+
+    pub async fn broadcast(&self, message: String) {
+        self.server.broadcast(message).await;
+    }
+}
+
+/*
+async fn handle_connection(&self, stream: TcpStream) -> Result<JoinHandle<()>, Error> {
         // Clone wallets for use in async block
         let wallets = Arc::clone(&self.wallet);
         let subscription_manager = Arc::clone(&self.subscription_manager);
-        
+
         /*
-            You have to create new atomically reference counted instance because it is used 
+            You have to create new atomically reference counted instance because it is used
             by tokio tasks and consumed by it, so lifetimes aren't matched otherwise.
-        */  
+        */
         let this = Arc::new(self.clone());
 
+        // Upgrade to WebSocket
+        let websocket_stream = accept_async(stream).await?;
+
+        let (mut ws_sender, mut ws_receiver) = websocket_stream.split();
+
+        let mut rx
         // Spawn task for each connection
-        tokio::spawn(async move {
-            // Upgrade to WebSocket
-            let websocket = match accept_async(stream).await {
-                Ok(ws) => ws,
-                Err(e) => {
-                    eprintln!("WebSocket accept error: {}", e);
-                    return;
-                }
-            };
+        let thread_handle = tokio::spawn(async move {
 
             let client_id = uuid::Uuid::new_v4().to_string();
-            let websocket = Arc::new(Mutex::new(websocket));
-            
-            this.add_client(client_id.clone(), Arc::clone(&websocket)).await;
+            let websocket_cloned = Arc::new(Mutex::new(websocket));
 
-            while let Some(msg) = websocket.lock().await.next().await {
-                println!("{:?}",msg);
+            this.add_client(client_id.clone(), Arc::clone(&websocket_cloned))
+                .await;
+
+            while let Some(msg) = websocket_cloned.lock().await.next().await {
+                println!("{:?}", msg);
                 match msg {
-
                     Ok(Message::Text(text)) => {
                         // Attempt to deserialize the text into a SubscriptionMessage
                         match serde_json::from_str::<SubscriptionMessage>(&text) {
@@ -91,24 +101,42 @@ impl BlockchainListener {
                                 SubscriptionTopic::Transactions => {
                                     println!("Client {} subscribed to Transactions", client_id);
                                     subscription_manager
-                                        .subscribe(client_id.clone(), SubscriptionTopic::Transactions)
+                                        .subscribe(
+                                            client_id.clone(),
+                                            SubscriptionTopic::Transactions,
+                                        )
                                         .await;
                                 }
                                 SubscriptionTopic::WalletBalance => {
                                     println!("Client {} subscribed to Wallet Balance", client_id);
                                     subscription_manager
-                                        .subscribe(client_id.clone(), SubscriptionTopic::WalletBalance)
+                                        .subscribe(
+                                            client_id.clone(),
+                                            SubscriptionTopic::WalletBalance,
+                                        )
                                         .await;
 
                                     let payload = MessagePayload::Balance { balance: 65 };
-                                    let message = WalletMessage::new("request_id".to_string(), "account_id".to_string(), WalletMessageDirection::ServerToClient, payload);
+                                    let message = WalletMessage::new(
+                                        "request_id".to_string(),
+                                        "account_id".to_string(),
+                                        WalletMessageDirection::ServerToClient,
+                                        payload,
+                                    );
 
-                                    let _ = this.broadcast_to_topic(SubscriptionTopic::WalletBalance, message).await;
+                                    // Send immediatelly message about balance to that user
+                                    //let _ = this.broadcast_to_topic(SubscriptionTopic::WalletBalance, message).await;
                                 }
                                 SubscriptionTopic::BlockchainStatus => {
-                                    println!("Client {} subscribed to Blockchain Status", client_id);
+                                    println!(
+                                        "Client {} subscribed to Blockchain Status",
+                                        client_id
+                                    );
                                     subscription_manager
-                                        .subscribe(client_id.clone(), SubscriptionTopic::BlockchainStatus)
+                                        .subscribe(
+                                            client_id.clone(),
+                                            SubscriptionTopic::BlockchainStatus,
+                                        )
                                         .await;
                                 }
                             },
@@ -128,45 +156,17 @@ impl BlockchainListener {
                     }
                     Ok(Message::Binary(_)) => {
                         // Handle other message types if needed
-                        println!("Received an unsupported message type from client {}", client_id);
-                    },
+                        println!(
+                            "Received an unsupported message type from client {}",
+                            client_id
+                        );
+                    }
                     Err(e) => eprintln!("Failed to parse the tungstenite Message: {}", e),
-                    _ => eprintln!("Not even sure what could happen here... {}", client_id)
+                    _ => eprintln!("Not even sure what could happen here... {}", client_id),
                 }
             }
         })
-    }
 
-    async fn add_client(&self, client_id: ClientId, websocket: Arc<Mutex<WebSocketStream<TcpStream>>>) {
-        let mut websocket_clients = self.websocket_clients.write().await;
-        websocket_clients.entry(client_id.clone()).or_insert(websocket);
-        println!("{} {} {}", "Client ", client_id, "joined.");
+        Ok(thread_handle)
     }
-
-    async fn remove_client(&self, client_id: ClientId) {
-        let mut websocket_clients = self.websocket_clients.write().await;
-        websocket_clients.remove_entry(&client_id);
-        println!("{} {} {}", "Client ", client_id, "left.");
-    }
-
-    async fn broadcast_to_topic<T>(&self, topic: SubscriptionTopic, message: WalletMessage<T>) -> Result<(), Error> where T: WalletMessagePayload{ 
-        let subscribers = self.subscription_manager.get_subscribers(&topic).await;
-        let mut websocket_clients = self.websocket_clients.write().await;
-        let serialized_message = serde_json::to_string(&message)?;
-        println!("{:?}", websocket_clients);
-        // TODO: Check why websocket_clients aren't stored properly
-        for subscriber in subscribers {
-            if let Some(websocket_client) = websocket_clients.get_mut(&subscriber) {
-                websocket_client.lock().await.send(Message::Text(serialized_message.clone())).await?;
-                println!("Sent!");
-            }
-        }   
-        Ok(())
-    }
-
-    pub async fn shutdown(&mut self) {
-        let mut websocket_server_mutex = self.websocket_server.lock().await;
-        websocket_server_mutex.shutdown().await;
-    }
-
-}
+*/

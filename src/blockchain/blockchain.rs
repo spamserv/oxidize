@@ -29,9 +29,9 @@ pub struct Blockchain {
     mempool: Vec<TransactionInput>,                // Pending transactions
     utxo: HashMap<String, Vec<TransactionOutput>>, // Unspent transaction outputs used for inputs into other transactions
     ledger: Vec<Transaction>, // The blockchain ledger keeps track of every transaction and the issuance of new coins through coinbase transactions.
-    config: BlockchainConfig,
+    config: Arc<BlockchainConfig>,
     wallet: Arc<Mutex<Wallet>>,
-    pub listener: BlockchainListener,
+    pub listener: Arc<Mutex<BlockchainListener>>,
 }
 
 impl Clone for Blockchain {
@@ -72,16 +72,21 @@ impl Blockchain {
     /// Builds a blockchain from scratch
     /// Creates genesis block based on the BLOCKCHAIN_INITIAL_DIFFICULTY
     pub async fn build(config: BlockchainConfig) -> Result<Self, Box<dyn Error>> {
-        let wallet = Arc::new(Mutex::new(
-            Wallet::new("MiningFeeWallet#1".to_string(), config.addr.to_string()),
-        ));
+        let wallet = Arc::new(Mutex::new(Wallet::new(
+            "MiningFeeWallet#1".to_string(),
+            config.addr.to_string(),
+        )));
+
+        let config = Arc::new(config);
+        let config_clone = Arc::clone(&config);
 
         // Websocket server for wallets to connect
-        let listener = BlockchainListener::new(config.addr.to_string(), wallet.clone()).await;
-        listener.start().await?;
-        // let listener =
-        //     Some(BlockchainListener::run(config.addr.to_string()))
-        //     .unwrap().await;
+        let listener = Arc::new(Mutex::new(BlockchainListener::new()));
+        let listener_clone = Arc::clone(&listener);
+
+        tokio::spawn(async move {
+            listener_clone.lock().await.run(&config_clone.addr).await;
+        });
 
         let mut wallet_mutex = wallet.lock().await;
         wallet_mutex.connect().await?;
@@ -91,7 +96,7 @@ impl Blockchain {
         let coinbase_address: &Address;
         let coinbase_transaction: Transaction;
 
-        // Scoped lock for  mutex
+        // Scoped lock for mutex
         {
             let wallet_lock = wallet_mutex;
 
@@ -369,9 +374,9 @@ impl Blockchain {
         self.blocks.push(block);
     }
 
-    pub async fn shutdown(&mut self) {
-        self.listener.shutdown();
-    }
+    // pub async fn shutdown(&mut self) {
+    //     self.listener.shutdown();
+    // }
 }
 
 #[cfg(test)]

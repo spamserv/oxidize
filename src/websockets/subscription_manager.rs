@@ -4,7 +4,7 @@ use tokio::sync::RwLock;
 
 use super::SubscriptionTopic;
 
-pub type ClientId = String;
+pub type ClientId = usize;
 pub type Subscribers = Arc<RwLock<HashMap<SubscriptionTopic, Vec<ClientId>>>>;
 
 #[derive(Debug, Clone)]

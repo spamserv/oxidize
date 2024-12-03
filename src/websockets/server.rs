@@ -1,87 +1,92 @@
-use anyhow::{Context, Result};
+use async_trait::async_trait;
+use futures_util::{SinkExt, StreamExt};
+use std::collections::HashMap;
+use std::pin::Pin;
 use std::sync::Arc;
-use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::{mpsc, Mutex as AsyncMutex};
-use tokio::task::JoinHandle;
+use tokio::sync::{broadcast, mpsc, Mutex};
+use tokio_tungstenite::accept_async;
+use tokio_tungstenite::tungstenite::protocol::Message;
 
-// WebSocket Server - Responsible only for creating and managing the listener
 #[derive(Debug, Clone)]
 pub struct WebSocketServer {
-    address: String,
-    shutdown_tx: mpsc::Sender<()>,
-    shutdown_rx: Arc<AsyncMutex<mpsc::Receiver<()>>>,
-    server_handle: Arc<AsyncMutex<Option<JoinHandle<()>>>>,
+    clients: Arc<Mutex<HashMap<usize, tokio::sync::mpsc::UnboundedSender<Message>>>>,
+    broadcaster: broadcast::Sender<String>,
 }
 
 impl WebSocketServer {
-    pub fn new(address: &str) -> Self {
-        let (shutdown_tx, shutdown_rx) = mpsc::channel(1);
-
+    pub fn new() -> Self {
+        let (broadcaster, _) = broadcast::channel(100);
         Self {
-            address: address.to_string(),
-            shutdown_tx,
-            shutdown_rx: Arc::new(AsyncMutex::new(shutdown_rx)),
-            server_handle: Arc::new(AsyncMutex::new(None)),
+            clients: Arc::new(Mutex::new(HashMap::new())),
+            broadcaster,
         }
     }
 
-    // Create listener and pass it to the service listener
-    pub async fn start<F>(&mut self, connection_handler: F) -> Result<()>
+    pub async fn run<F>(&self, addr: &str, handle_message: F)
     where
-        F: Fn(TcpStream) -> () + Send + Sync + 'static + Clone,
+        F: Fn(
+                String,
+                usize,
+                Arc<Mutex<HashMap<usize, mpsc::UnboundedSender<Message>>>>,
+            ) -> Pin<Box<dyn std::future::Future<Output = ()> + Send + 'static>>
+            + Send
+            + Sync
+            + 'static,
     {
-        let listener = TcpListener::bind(&self.address)
-            .await
-            .context("Failed to bind WebSocket server")?;
+        let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+        let mut id_counter = 0;
 
-        let shutdown_tx = self.shutdown_tx.clone();
-        let shutdown_rx = self.shutdown_rx.clone();
+        // Wrap the closure in an Arc for safe sharing.
+        let handle_message = Arc::new(handle_message);
 
-        let handler = connection_handler.clone();
+        while let Ok((stream, _)) = listener.accept().await {
+            let ws_stream = accept_async(stream).await.unwrap();
+            let (mut ws_tx, mut ws_rx) = ws_stream.split();
 
-        let server_handle = tokio::spawn(async move {
-            /*
-               What I learnt here:
-               - The problem here is that shutdown_rx is borrowed across an asynchronous boundary
-               (inside tokio::spawn), but its lifetime cannot satisfy the 'static requirement.
-               This occurs because tokio::spawn requires all captured variables to have a 'static lifetime,
-               meaning they must either be owned or not reference local variables directly.
+            let (tx, mut rx) = mpsc::unbounded_channel();
+            let client_id = id_counter;
+            id_counter += 1;
 
-               To fix this, you can clone the shutdown_rx before passing it into the tokio::spawn closure,
-               ensuring that the borrowed value isn't tied to the local scope.
-               Also, declare the shutdown_rx_locked to ensure it is owned by the thread and lives long enough.
-            */
-            let mut shutdown_rx_locked = shutdown_rx.lock().await;
+            self.clients.lock().await.insert(client_id, tx.clone());
 
-            tokio::select! {
-                _ = async {
-                    loop {
-                        match listener.accept().await {
-                            Ok((stream, _)) => {
-                                // Call the connection handler with the stream
-                                handler(stream);
-                            },
-                            Err(e) => {
-                                eprintln!("Accept error: {}", e);
-                            }
-                        }
+            let clients = Arc::clone(&self.clients);
+            let handle_message_clone = Arc::clone(&handle_message);
+
+            // Spawn a task for handling WebSocket messages
+            tokio::spawn(async move {
+                while let Some(msg) = ws_rx.next().await {
+                    if let Ok(Message::Text(text)) = msg {
+                        println!("New message: {:?}", text);
+                        // Execute the provided closure to handle the message
+                        Box::pin(handle_message_clone(text, client_id, clients.clone())).await;
                     }
-                } => {},
-                _ = shutdown_rx_locked.recv() => {
-                    println!("WebSocket server shutting down");
                 }
-            }
-        });
+                clients.lock().await.remove(&client_id);
+            });
 
-        self.server_handle = Arc::new(AsyncMutex::new(Some(server_handle)));
-        Ok(())
+            // Spawn a task for sending messages to this client
+            tokio::spawn(async move {
+                while let Some(msg) = rx.recv().await {
+                    let _ = ws_tx.send(msg).await;
+                }
+            });
+        }
+    }
+    
+
+    pub async fn send(&self, client_id: usize, message: String) {
+        if let Some(client) = self.clients.lock().await.get(&client_id) {
+            let _ = client.send(Message::Text(message));
+        }
+    }
+
+    pub async fn broadcast(&self, message: String) {
+        for (_, client) in self.clients.lock().await.iter() {
+            let _ = client.send(Message::Text(message.clone()));
+        }
     }
 
     pub async fn shutdown(&mut self) {
-        let _ = self.shutdown_tx.send(()).await;
 
-        if let Some(handle) = self.server_handle.lock().await.take() {
-            let _ = handle.await;
-        }
     }
 }
