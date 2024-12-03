@@ -119,6 +119,8 @@ Down is the explanation of each section of a blockchain.
 
 ### TransactionManager
 
+### Config
+
 ## Oxidize Features
 
 #### 1. Consensus Mechanism
@@ -128,10 +130,32 @@ Down is the explanation of each section of a blockchain.
 #### 2.2. Transaction Validation
 
 #### 3. Wallets
+Wallet is able to:
+- create new accounts
+- connect to blockchain node
+- exchange messages, such as:
+  - get balance
+  - get transaction history
+  - ping
 
-#### 3. Networking and Node Communication
+#### 4. Networking and Node Communication
 
-#### 4. Block Verification
+0. **WebSocket Server**:
+There is a bare WebSocket implementation that listens to new connections and spawns a new tokio task for each new connection. It should be spawned in a separate thread not to block the main thread.
+WebSocket server accepts address and message handler as parameters in `.run()` function that allows a separation of business logic from the actual WS server.
+WebSocket server supports:
+- [x] send
+- [x] broadcast
+- [ ] anycast (TBD)
+
+1. **Blockchain Listener**:
+Blockchain node has a BlockchainListener that is a wrapper around my implementation of WebSocketServer using Tokio library.
+Current intention is to use *Blockchain Listener* for communication between `Wallets` and `Blockchain Node` such as to get balance, get transaction history, ping and similar functionalities.
+
+2. **Inter-Node Communication**:
+- TBD
+
+#### 5. Block Verification
 
 1. **Single Block Verification**: 
 Block is a fundamental part of the blockchain. Its main purpose is to carry and store transactions. Blockchains building blocks are actually - blocks. Each block has a header and body. In order to verify a block, there are several checks implemented, which can be found in the `enum BlockValidationError`:
@@ -165,17 +189,17 @@ Beyond cryptographic integrity, there should be a consenus mechanism to check fo
   - block creation rules - mechanism to understand who and when can create blocks and what types of transaction to include
   - network rules - enforce particuolar network structure with *block size limit* and *transaciton format*
 
-#### 5. Blockchain State Management
+#### 6. Blockchain State Management
 
-#### 6. Merkle Tree Structure
+#### 7. Merkle Tree Structure
 
-#### 7. User Interface (Optional)
+#### 8. User Interface (Optional)
 
-#### 8. Security Features
+#### 9. Security Features
 
-#### 9. Logging and Monitoring
+#### 10. Logging and Monitoring
 
-#### 10. Advanced Features
+#### 11. Advanced Features
 
 ## Mods / Crates
 
