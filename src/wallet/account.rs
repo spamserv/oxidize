@@ -4,33 +4,30 @@ use sha2::{Digest, Sha256};
 
 use crate::transaction::Transaction;
 
-use super::Address;
-
 /// Account struct, used to store transaction history, address.
 #[derive(Debug, Clone, Default)]
 pub struct Account {
-    address: Address,
+    address: String,
+    name: String,
     balance: u64,
     created_at: String,
-    transaction_history: Vec<Transaction>,
+    transaction_history: Vec<Transaction>, // local mempool
 }
 
 impl Account {
     /// Creates new account
-    pub fn new(public_key: &PublicKey) -> Self {
+    pub fn new(public_key: &PublicKey, name: &str) -> Self {
         let created_at = Utc::now().to_rfc3339();
-        //let address = Self::generate_address(&public_key);
-        let address = Address {
-            id: Self::generate_address(public_key),
-            transactions: vec![],
-        };
+        let address = Self::generate_address(public_key);
         let transaction_history = vec![];
+        let name = String::from(name);
 
         Self {
-            created_at,
             address,
-            transaction_history,
-            balance: 0
+            name,
+            created_at,
+            balance: 0,
+            transaction_history
         }
     }
 
@@ -52,7 +49,12 @@ impl Account {
         todo!()
     }
 
-    pub fn address(&self) -> &Address {
-        &self.address
+    pub fn name(&self) -> &String {
+        &self.name
     }
+
+    pub fn transaction_history(&self) -> &Vec<Transaction> {
+        &self.transaction_history
+    }
+    
 }

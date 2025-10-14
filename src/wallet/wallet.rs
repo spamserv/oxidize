@@ -12,9 +12,9 @@ use hdwallet::{
     ExtendedPrivKey, ExtendedPubKey,
 };
 
-use crate::websockets::{SubscriptionMessage, SubscriptionTopic};
+use crate::{transaction::{Transaction, TransactionInput, TransactionManager, TransactionOutput}, websockets::{SubscriptionMessage, SubscriptionTopic}};
 
-use super::{Account, WalletClient, WalletMessage};
+use super::{Account, WalletClient};
 
 /// Wallet struct, used for storing accounts and key pair
 #[derive(Debug, Clone)]
@@ -36,6 +36,7 @@ impl Wallet {
         let (public_key, private_key) = Wallet::generate_key_pair().unwrap();
         let id = "".to_string();
         let ws = WalletClient::new(ws_uri.to_string());
+        
         // Lets wait for the full blockchain init before sending messages.
         // ws.send_message(NodeMessageType::Balance { balance: 24 }).await?;
 
@@ -68,9 +69,55 @@ impl Wallet {
         Ok(())
     }
 
+    /// Initiate payment by creating a transaction from the UTXOs and broadcasting it to the network
+    /// Note: This function does not yet handle UTXO selection, fees, or change addresses
+    pub fn initiate_payment(&mut self, account_name: &str, recipient_addr: &str, amount: u64) -> Result<(), String> {
+        let account = self.find_account(account_name)?;
+
+        let previous_tx_hash = account
+            .transaction_history()
+            .last()
+            .map(|tx| tx.metadata().transaction_hash)
+            .unwrap_or([0u8; 32]);
+
+        let tx_input = TransactionInput {
+            previous_tx_hash, // Placeholder, should be set to actual previous transaction hash
+            index: 0, // Placeholder, should be set to actual index
+            signature: String::from("PLACEHOLDER_SIGNATURE"), // Placeholder, should be set to actual signature
+            public_key: self.public_key.clone(),
+            amount,
+            nonce: account.next_nonce(),
+        };
+
+        let tx_output = TransactionOutput {
+            amount,
+            recipient_address: recipient_addr.to_string(),
+        };
+
+        let tx = TransactionManager::create_transaction(
+            vec![tx_input],
+            vec![tx_output],
+            self.private_key.clone(),
+        );
+
+        // TODO: Broadcast the transaction to the network
+        println!("Created transaction: {:?}", tx);
+
+        Ok(())
+    }
+
+    pub fn find_account(&self, name: &str) -> Result<Account, String>{
+        let result = self.accounts.iter().find(|acc| acc.name() == name);
+        match result {
+            Some(account) => Ok(account.clone()),
+            _ => Err(format!("Account with name {} not found", name)),
+            
+        }
+    }
+
     /// Create new account for the wallet, based on the `public_key`
-    pub fn create_new_account(&mut self) {
-        let account = Account::new(&self.public_key);
+    pub fn create_new_account(&mut self, name: &str) {
+        let account = Account::new(&self.public_key, name);
         self.accounts.push(account);
     }
 

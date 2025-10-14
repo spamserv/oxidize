@@ -22,6 +22,14 @@ impl Transaction {
     pub fn outputs(&self) -> &Vec<TransactionOutput> {
         &self.outputs
     }
+
+    pub fn inputs(&self) -> &Vec<TransactionInput> {
+        &self.inputs
+    }
+
+    pub fn metadata(&self) -> &TransactionMetadata {
+        &self.metadata
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -75,7 +83,7 @@ pub struct TransactionOutput {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct TransactionMetadata {
-    transaction_hash: [u8; 32],
+    pub transaction_hash: [u8; 32],
     timestamp: String,
     status: TransactionStatus,
     r#type: TransactionType,
