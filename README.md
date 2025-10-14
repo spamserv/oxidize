@@ -61,6 +61,7 @@ Here is the current state of the blockchain:
 - [ ] Build a peer-to-peer (P2P) network for node communication.
 - [ ] Implement block and transaction propagation among nodes.
 - [ ] Develop synchronization for consistent blockchain copies across nodes.
+- [ ] Communication between Wallet and Node
 
 #### 6. Block Verification
 - [x] Create a function to verify block integrity (hash, timestamp, difficulty).
@@ -130,10 +131,12 @@ Down is the explanation of each section of a blockchain.
 ## Oxidize Features
 
 #### 1. Consensus Mechanism
+- Proof of Work for now, validating whole blockchain, part of blockchain and single block
 
 #### 2.1. Transaction Flexibility
 
 #### 2.2. Transaction Validation
+- Each transaction is hashed and signed with Wallet's private key
 
 #### 3. Wallets
 Wallet is able to:
@@ -143,6 +146,7 @@ Wallet is able to:
   - get balance
   - get transaction history
   - ping
+  - initiate payment to blockchain
 
 #### 4. Networking and Node Communication
 
@@ -195,17 +199,21 @@ Beyond cryptographic integrity, there should be a consenus mechanism to check fo
   - block creation rules - mechanism to understand who and when can create blocks and what types of transaction to include
   - network rules - enforce particuolar network structure with *block size limit* and *transaciton format*
 
-#### 6. Blockchain State Management
+#### 6. UTXO
 
-#### 7. Merkle Tree Structure
+#### 7. Mempool
 
-#### 8. User Interface (Optional)
+#### 8. Blockchain State Management
 
-#### 9. Security Features
+#### 9. Merkle Tree Structure
 
-#### 10. Logging and Monitoring
+#### 10. User Interface (Optional)
 
-#### 11. Advanced Features
+#### 11. Security Features
+
+#### 12. Logging and Monitoring
+
+#### 13. Advanced Features
 
 ## Mods / Crates
 
@@ -216,16 +224,16 @@ Consists of blockchain, block, blockchain_listener.
 Includes configuration constants.
 
 ### transaction
-Consists of Transaction definition, Header, Body (Input, Output, Metadata), and has blueprint for TransactionManager that will create transactions and track status of a transaction.
+Consists of Transaction definition, Header, Body (Input, Output, Metadata), and has blueprint for TransactionManager creates transaction and tracks status of a transaction.
 
 ### utils
 Has helper functions for hash and transactions.
 
 ### wallet
-Includes Wallet, WalletClient to connect to the Node, Accounts, Addresses, Wallet Message types to exchange with the Node. 
+Includes Wallet, WalletClient to connect to the Node, Accounts, Wallet Message types to exchange with the Node. 
 
 ### websockets
-Includes WebSocketClient and WebSocketServer implementation for various stuff.
+Includes WebSocketClient and WebSocketServer implementation for communication between **nodes** and **clients**.
 
 ## Tests
 At one point, you should be able to run tests per crate. TBD
