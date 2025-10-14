@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     wallet2.create_new_account();
     wallet2.create_new_account();
 
-    //dbg!(node);
+    // dbg!(node);
     // dbg!(
     //     wallet1.id,
     //     wallet1.name,
