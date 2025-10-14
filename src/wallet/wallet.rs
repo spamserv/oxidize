@@ -104,4 +104,12 @@ impl Wallet {
     pub fn accounts(&self) -> &Vec<Account> {
         &self.accounts
     }
+
+    pub fn public_key(&self) -> &PublicKey {
+        &self.public_key
+    }
+
+    pub fn private_key(&self) -> &SecretKey {
+        &self.private_key
+    }
 }

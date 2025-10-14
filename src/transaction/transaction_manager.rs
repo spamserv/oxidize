@@ -4,7 +4,9 @@
 //! - building the transaction from scratch (inputs, outputs, validation)
 //!
 
+use bincode::{Decode, Encode};
 use chrono::Utc;
+use hdwallet::secp256k1::{PublicKey, SecretKey};
 use serde::{Deserialize, Serialize};
 
 use crate::utils::TransactionHelper;
@@ -24,10 +26,45 @@ impl Transaction {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionInput {
-    pub previous_tx_hash: String, // Hash of the previous transaction
+    pub previous_tx_hash: [u8; 32], // Hash of the previous transaction
     pub index: u32,               // Index of the output being used
-    pub signature: String,        // Signature for authorization
+    pub signature: String,
+    #[serde(default="default_public_key", skip_serializing, skip_deserializing)]
+    pub public_key: PublicKey,        // Signature for authorization
     pub amount: u64,
+    pub nonce: u64,
+}
+
+fn default_public_key() -> PublicKey {
+    // Replace this with a real default if needed
+    PublicKey::from_slice(&[0u8; 33]).unwrap()
+}
+
+impl bincode::Encode for TransactionInput {
+    fn encode<E: bincode::enc::Encoder>(
+        &self,
+        encoder: &mut E,
+    ) -> core::result::Result<(), bincode::error::EncodeError> {
+        bincode::Encode::encode(&self.signature, encoder)?;
+        bincode::Encode::encode(&self.previous_tx_hash, encoder)?;
+        bincode::Encode::encode(&self.amount, encoder)?;
+        bincode::Encode::encode(&self.nonce, encoder)?;
+        bincode::Encode::encode(&self.index, encoder)?;
+
+        Ok(())
+    }
+}
+
+impl bincode::Encode for TransactionOutput {
+    fn encode<E: bincode::enc::Encoder>(
+        &self,
+        encoder: &mut E,
+    ) -> core::result::Result<(), bincode::error::EncodeError> {
+        bincode::Encode::encode(&self.recipient_address, encoder)?;
+        bincode::Encode::encode(&self.amount, encoder)?;
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -38,13 +75,14 @@ pub struct TransactionOutput {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct TransactionMetadata {
-    transaction_id: String,
+    transaction_hash: [u8; 32],
     timestamp: String,
     status: TransactionStatus,
     r#type: TransactionType,
+    signature: Vec<u8>, // Store signature as bytes for serialization
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
 pub enum TransactionStatus {
     Pending,
     Mined,
@@ -69,30 +107,29 @@ struct TransactionBuilder {}
 struct Signer {}
 
 impl TransactionManager {
-    pub fn create_transaction(&self, recipient: &str, amount: u64) -> Transaction {
-        todo!()
-    }
-
-    pub fn create_coinbase_transaction(recipient: &str, amount: u64) -> Transaction {
-        let inputs = vec![];
-        let transaction_output = TransactionOutput {
-            amount,
-            recipient_address: recipient.to_string(),
-        };
-        let outputs = vec![transaction_output];
-
+    pub fn create_transaction(
+        inputs: Vec<TransactionInput>,
+        outputs: Vec<TransactionOutput>,
+        private_key: SecretKey,
+    ) -> Transaction {
         let timestamp = Utc::now().to_rfc3339();
         let status = TransactionStatus::Pending;
 
-        let transaction_id =
-            TransactionHelper::generate_transaction_id(&inputs, &outputs, &timestamp, &status);
+        // Creates transaction hash
+        let transaction_hash =
+            TransactionHelper::generate_transaction_hash(&inputs, &outputs, &timestamp, &status);
         let r#type = TransactionType::Coinbase;
+
+        // Signs the transaction hash using Wallet private key
+        let signature_obj = TransactionHelper::sign_transaction(&private_key, transaction_hash);
+        let signature = signature_obj.serialize_compact().to_vec(); // Convert signature to Vec<u8>
 
         let metadata = TransactionMetadata {
             timestamp,
             status,
-            transaction_id,
+            transaction_hash,
             r#type,
+            signature,
         };
 
         Transaction {
@@ -102,9 +139,33 @@ impl TransactionManager {
         }
     }
 
-    pub fn sign_transaction(&self, transaction: &mut Transaction) -> Result<(), String> {
-        // Sign the transaction with private key
-        todo!()
+    pub fn create_coinbase_transaction(
+        private_key: &SecretKey,
+        public_key: &PublicKey,
+        recipient_addr: &str,
+        amount: u64,
+        nonce: u64
+    ) -> Transaction {
+        let transaction_input = TransactionInput {
+            previous_tx_hash: [0u8; 32],
+            index: 0,
+            signature: String::from("INITIAL_COINBASE_SIGNATURE"),
+            public_key: public_key.clone(),
+            amount: amount,
+            nonce,
+        };
+
+        let inputs = vec![transaction_input];
+
+        let transaction_output = TransactionOutput {
+            amount,
+            recipient_address: recipient_addr.to_string(),
+        };
+        let outputs = vec![transaction_output];
+
+        let tx = TransactionManager::create_transaction(inputs, outputs, private_key.clone());
+
+        tx
     }
 
     pub fn broadcast_transaction(&self, transaction: &Transaction) -> Result<(), String> {

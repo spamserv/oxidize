@@ -44,6 +44,10 @@ impl Account {
         hash_result
     }
 
+    pub fn next_nonce(&self) -> u64 {
+        self.transaction_history.len() as u64
+    }
+
     pub fn get_balance() -> u64 {
         todo!()
     }

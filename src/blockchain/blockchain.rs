@@ -108,8 +108,11 @@ impl Blockchain {
             coinbase_address = coinbase_account.address();
 
             coinbase_transaction = TransactionManager::create_coinbase_transaction(
-                coinbase_address.id(),
+                wallet_lock.private_key(),
+                wallet_lock.public_key(),
+                coinbase_address.id.as_str(),
                 BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE,
+                coinbase_account.next_nonce(),
             );
         }
 
@@ -157,8 +160,11 @@ impl Blockchain {
                 .expect("No coinbase error available.");
             coinbase_address = coinbase_account.address();
             coinbase_transaction = TransactionManager::create_coinbase_transaction(
-                coinbase_address.id(),
+                wallet_lock.private_key(),
+                wallet_lock.public_key(),
+                coinbase_address.id.as_str(),
                 BLOCKCHAIN_COINBASE_BLOCK_FEE,
+                coinbase_account.next_nonce(),
             );
         }
 
@@ -252,7 +258,7 @@ impl Blockchain {
         to_hash: &str,
     ) -> Result<(), BlockValidationError> {
         let (from_index, to_index) = match self.find_hash_indices(from_hash, to_hash) {
-            None => return Err(BlockValidationError::RangeIndexFault),
+            none => return Err(BlockValidationError::RangeIndexFault),
             Some((from_index, to_index)) => (from_index, to_index),
         };
 
