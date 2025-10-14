@@ -65,14 +65,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("{}", "Creating 2 wallets".bold());
     let mut wallet1 = Wallet::new("Wallet#1".to_string(), WEBSOCKET_URI.to_string());
     wallet1.connect().await?;
-    wallet1.create_new_account("MainAccount".to_string());
-    wallet1.create_new_account("SecondAccount".to_string());
+    wallet1.create_new_account("MainAccount");
+    wallet1.create_new_account("SecondAccount");
 
     let mut wallet2 = Wallet::new("Wallet#2".to_string(), WEBSOCKET_URI.to_string());
 
     wallet2.connect().await?;
-    wallet2.create_new_account("MiceAccount".to_string());
-    wallet2.create_new_account("CheeseAccount".to_string());
+    wallet2.create_new_account("MiceAccount");
+    wallet2.create_new_account("CheeseAccount");
 
     dbg!(node);
     dbg!(

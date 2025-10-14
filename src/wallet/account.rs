@@ -56,5 +56,9 @@ impl Account {
     pub fn transaction_history(&self) -> &Vec<Transaction> {
         &self.transaction_history
     }
+
+    pub fn address(&self) -> &String {
+        &self.address
+    }
     
 }

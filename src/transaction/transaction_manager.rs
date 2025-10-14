@@ -82,7 +82,7 @@ pub struct TransactionOutput {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct TransactionMetadata {
+pub struct TransactionMetadata {
     pub transaction_hash: [u8; 32],
     timestamp: String,
     status: TransactionStatus,

@@ -14,7 +14,7 @@ use tokio::sync::Mutex;
 // Modules/Crates
 use super::{Block, BlockValidationError, BlockchainListener};
 use crate::transaction::{Transaction, TransactionInput, TransactionManager, TransactionOutput};
-use crate::wallet::{Account, Address, Wallet};
+use crate::wallet::{Account, Wallet};
 use crate::{
     config::{
         BLOCKCHAIN_COINBASE_BLOCK_FEE, BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE,
@@ -90,10 +90,9 @@ impl Blockchain {
 
         let mut wallet_mutex = wallet.lock().await;
         wallet_mutex.connect().await?;
-        wallet_mutex.create_new_account();
+        wallet_mutex.create_new_account("BlockchainNodeWalletAccount");
 
         let coinbase_account: &Account;
-        let coinbase_address: &Address;
         let coinbase_transaction: Transaction;
 
         // Scoped lock for mutex
@@ -105,12 +104,12 @@ impl Blockchain {
                 .first()
                 .expect("No coinbase error available.");
 
-            coinbase_address = coinbase_account.address();
+            let coinbase_address = coinbase_account.address();
 
             coinbase_transaction = TransactionManager::create_coinbase_transaction(
                 wallet_lock.private_key(),
                 wallet_lock.public_key(),
-                coinbase_address.id.as_str(),
+                coinbase_address,
                 BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE,
                 coinbase_account.next_nonce(),
             );
@@ -149,7 +148,6 @@ impl Blockchain {
         let last_block_header = &self.blocks.last().unwrap().header;
 
         let coinbase_account: &Account;
-        let coinbase_address: &Address;
         let coinbase_transaction: Transaction;
 
         {
@@ -158,11 +156,11 @@ impl Blockchain {
                 .accounts()
                 .first()
                 .expect("No coinbase error available.");
-            coinbase_address = coinbase_account.address();
+            let coinbase_address = coinbase_account.address();
             coinbase_transaction = TransactionManager::create_coinbase_transaction(
                 wallet_lock.private_key(),
                 wallet_lock.public_key(),
-                coinbase_address.id.as_str(),
+                coinbase_address,
                 BLOCKCHAIN_COINBASE_BLOCK_FEE,
                 coinbase_account.next_nonce(),
             );
