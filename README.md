@@ -41,14 +41,14 @@ Here is the current state of the blockchain:
 - [ ] Once the block is mined, remove transactions from mempool and update transaction status.
 
 #### 3.1. Transaction Flexibility
-- [ ] Define Transaction and its usage
+- [x] Define Transaction and its usage
 - [ ] Decide on block size, based on the usage of blockchain
 - [ ] Decide if block will be flexible in size (changeable) or fixed
 - [ ] Add transaction fee
 
 #### 3.2. Transaction Validation
 - [ ] Implement transaction validation (e.g., check inputs vs. outputs).
-- [ ] Add digital signatures for transactions to ensure authenticity.
+- [x] Add digital signatures for transactions to ensure authenticity.
 - [ ] Implement which transaction go into block, and which don't based on transaction fee
 
 #### 4. Wallets
@@ -118,6 +118,12 @@ Down is the explanation of each section of a blockchain.
 ### Helpers
 
 ### TransactionManager
+
+### Utils
+
+#### Transaction Utils
+
+#### Hash Utils
 
 ### Config
 
