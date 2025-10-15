@@ -73,6 +73,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     wallet2.connect().await?;
     wallet2.create_new_account("MiceAccount");
     wallet2.create_new_account("CheeseAccount");
+    let wallet2_account = wallet2.find_account("MiceAccount")?.address().to_string();
+    
+    wallet1.initiate_payment("MainAccount", &wallet2_account, 5).await?;
+    wallet1.initiate_payment("CheeseAccount", &wallet2_account, 25).await?;
+    wallet1.initiate_payment("CheeseAccount", &wallet2_account, 15).await?;
 
     dbg!(node);
     dbg!(
@@ -81,12 +86,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         wallet1.created_at,
         wallet1.accounts
     );
-    dbg!(
-        wallet2.id,
-        wallet2.name,
-        wallet2.created_at,
-        wallet2.accounts
-    );
+    // dbg!(
+    //     wallet2.id,
+    //     wallet2.name,
+    //     wallet2.created_at,
+    //     wallet2.accounts
+    // );
 
     loop {
         // DO STUFF
