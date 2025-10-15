@@ -89,7 +89,18 @@ impl BlockchainListener {
                                         SubscriptionTopic::BlockchainStatus,
                                     )
                                     .await;
-                            }
+                            },
+                            SubscriptionTopic::InitiateTransaction => {
+                                println!("Client {} initiated a transaction", client_id);
+                                let self_locked = self_ref.lock().await;
+                                self_locked
+                                    .subscription_manager
+                                    .subscribe(
+                                        client_id.clone(),
+                                        SubscriptionTopic::InitiateTransaction,
+                                    )
+                                    .await;
+                            },
                         },
                         Err(e) => {
                             eprintln!("Failed to parse subscription message: {}", e);

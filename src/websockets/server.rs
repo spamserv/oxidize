@@ -10,7 +10,7 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 pub struct WebSocketServer {
     clients: Arc<Mutex<HashMap<usize, tokio::sync::mpsc::UnboundedSender<Message>>>>,
     // TODO: Check if this is needed for broadcast/anycast
-    _broadcaster: broadcast::Sender<String>,
+    broadcaster: broadcast::Sender<String>,
 }
 
 impl WebSocketServer {
