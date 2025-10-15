@@ -3,9 +3,10 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MessagePayload {
-    TransactionSend { transactions: Transaction },
-    Balance { balance: u64 }, // Sends balance from server "node" to client
-    TransactionHistory { transactions: Vec<Transaction> }, // Sends transaction history from server "node" to client
+    TransactionSend { transaction: Transaction }, // Sends a transaction from client (Wallet) to server (Node)
+    TransactionHistory { transactions: Vec<Transaction> }, // Sends transaction history from server (Node) to client (Wallet)
+    Balance { balance: u64 }, // Sends balance from server (Node) to client (Wallet)
+    
 }
 
 pub trait WalletMessagePayload: Serialize {}

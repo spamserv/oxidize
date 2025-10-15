@@ -12,7 +12,7 @@ use hdwallet::{
     ExtendedPrivKey, ExtendedPubKey,
 };
 
-use crate::{transaction::{Transaction, TransactionInput, TransactionManager, TransactionOutput}, websockets::{SubscriptionMessage, SubscriptionTopic}};
+use crate::{transaction::{TransactionInput, TransactionManager, TransactionOutput}, websockets::{SubscriptionMessage, SubscriptionTopic}};
 
 use super::{Account, WalletClient};
 

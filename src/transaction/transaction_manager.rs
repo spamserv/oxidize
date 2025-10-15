@@ -110,9 +110,9 @@ pub enum TransactionError {
 
 pub struct TransactionManager {}
 
-struct TransactionBuilder {}
+// struct TransactionBuilder {}
 
-struct Signer {}
+// struct Signer {}
 
 impl TransactionManager {
     pub fn create_transaction(
@@ -176,45 +176,45 @@ impl TransactionManager {
         tx
     }
 
-    pub fn broadcast_transaction(&self, transaction: &Transaction) -> Result<(), String> {
+    pub fn broadcast_transaction(&self, _transaction: &Transaction) -> Result<(), String> {
         // Broadcast the transaction to the blockchain network
         todo!()
     }
 
-    pub fn calculate_fee(&self, transaction: &Transaction) -> u64 {
+    pub fn calculate_fee(&self, _transaction: &Transaction) -> u64 {
         // Calculate transaction fee
         todo!()
     }
 
-    pub fn track_transaction(&self, tx_id: &str) -> Result<TransactionStatus, String> {
+    pub fn track_transaction(&self, _tx_id: &str) -> Result<TransactionStatus, String> {
         // Track the status of the transaction
         todo!()
     }
 }
 
-impl TransactionBuilder {
-    pub fn add_input(&mut self, tx_id: &str, index: u32, amount: u64) -> TransactionInput {
-        // Add an input to the transaction
-        todo!()
-    }
+// impl TransactionBuilder {
+//     pub fn add_input(&mut self, tx_id: &str, index: u32, amount: u64) -> TransactionInput {
+//         // Add an input to the transaction
+//         todo!()
+//     }
 
-    pub fn add_output(&mut self, recipient: &str, amount: u64) -> TransactionOutput {
-        // Add an output to the transaction
-        todo!()
-    }
+//     pub fn add_output(&mut self, recipient: &str, amount: u64) -> TransactionOutput {
+//         // Add an output to the transaction
+//         todo!()
+//     }
 
-    pub fn create_change_output(&mut self, amount: u64) -> Result<(), String> {
-        // Create a change output if the inputs exceed the transaction amount
-        todo!()
-    }
+//     pub fn create_change_output(&mut self, amount: u64) -> Result<(), String> {
+//         // Create a change output if the inputs exceed the transaction amount
+//         todo!()
+//     }
 
-    pub fn validate(&self) -> Result<(), String> {
-        // Validate the transaction, ensuring inputs and outputs match
-        todo!()
-    }
+//     pub fn validate(&self) -> Result<(), String> {
+//         // Validate the transaction, ensuring inputs and outputs match
+//         todo!()
+//     }
 
-    pub fn calculate_fee(&self) -> u64 {
-        // Calculate the fee based on the size and inputs/outputs
-        todo!()
-    }
-}
+//     pub fn calculate_fee(&self) -> u64 {
+//         // Calculate the fee based on the size and inputs/outputs
+//         todo!()
+//     }
+// }

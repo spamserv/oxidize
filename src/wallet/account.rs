@@ -60,5 +60,13 @@ impl Account {
     pub fn address(&self) -> &String {
         &self.address
     }
+
+    pub fn balance(&self) -> u64 {
+        self.balance
+    }
+
+    pub fn created_at(&self) -> &String {
+        &self.created_at
+    }
     
 }

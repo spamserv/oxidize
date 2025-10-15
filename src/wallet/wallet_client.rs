@@ -3,7 +3,6 @@ use std::{error::Error, sync::Arc};
 use tokio::sync::{mpsc, Mutex};
 use tokio_tungstenite::tungstenite::Message;
 
-use super::{wallet_message::WalletMessagePayload, WalletMessage};
 use crate::websockets::{SubscriptionMessage, WebSocketClient};
 
 #[derive(Debug, Clone)]

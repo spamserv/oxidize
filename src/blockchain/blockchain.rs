@@ -49,7 +49,7 @@ impl Clone for Blockchain {
 }
 #[derive(Debug, Clone)]
 pub struct BlockchainConfig {
-    difficulty: u8,
+    pub difficulty: u8,
     pub addr: String,
 }
 
@@ -256,8 +256,9 @@ impl Blockchain {
         to_hash: &str,
     ) -> Result<(), BlockValidationError> {
         let (from_index, to_index) = match self.find_hash_indices(from_hash, to_hash) {
-            none => return Err(BlockValidationError::RangeIndexFault),
             Some((from_index, to_index)) => (from_index, to_index),
+            _ => return Err(BlockValidationError::RangeIndexFault),
+            
         };
 
         if self.blocks.len() <= 1 {
@@ -400,7 +401,9 @@ mod tests {
 
     #[tokio::test]
     async fn it_builds_a_blockchain() {
-        let node = build_blockchain().await;
+        let mut node = build_blockchain().await;
+        assert_eq!(node.blocks.len(), 1); // Genesis block
+        node.shutdown().await
     }
 
     #[tokio::test]

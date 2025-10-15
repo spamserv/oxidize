@@ -36,7 +36,7 @@ impl BlockchainListener {
         let self_ref = Arc::new(Mutex::new(self.clone()));
 
         self.server
-            .run(addr, move |message, client_id, clients| {
+            .run(addr, move |message, client_id, _clients| {
                 let self_ref = Arc::clone(&self_ref);
                 Box::pin(async move {
                     println!("Message from client {}: {}", client_id, message);
