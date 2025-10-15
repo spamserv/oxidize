@@ -39,6 +39,9 @@ Here is the current state of the blockchain:
 #### 2. Mempool
 - [ ] Implement mempool for the unprocessed (pending) transactions.
 - [ ] Once the block is mined, remove transactions from mempool and update transaction status.
+- [ ] Transaction validation (signature, UTXO, nonce, balance)
+- [ ] De-duplication (don't accept same transaction twice)
+- [ ] Eviction policy 
 
 #### 3.1. Transaction Flexibility
 - [x] Define Transaction and its usage
@@ -202,6 +205,29 @@ Beyond cryptographic integrity, there should be a consenus mechanism to check fo
 #### 6. UTXO
 
 #### 7. Mempool
+
+**Transaction flow through mempool**:
+
+1. Wallet / peer broadcasts a transaction.
+2. Node receives transaction message.
+3. Node validates:
+4. Verify digital signature.
+5. Check nonce or UTXOs are unspent.
+6. Check transaction format (fields, size, limits).
+
+7. If valid → add to mempool.
+
+8. Broadcast transaction to peers (so they add it too).
+
+9. When mining a block:
+
+  - 9.1. Pick top transactions from mempool (e.g., by fee).
+  - 9.2. Include them in the block.
+
+10. After block mined:
+    
+  - 10.1. Remove included transactions from mempool.
+  - 10.2. If a transaction becomes invalid (e.g., double-spent) → remove it.
 
 #### 8. Blockchain State Management
 
