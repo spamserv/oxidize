@@ -3,7 +3,7 @@ use std::{error::Error, sync::Arc};
 use tokio::sync::{mpsc, Mutex};
 use tokio_tungstenite::tungstenite::Message;
 
-use crate::{comms, websockets::{WebSocketClient}};
+use crate::{comms, websockets::WebSocketClient};
 
 #[derive(Debug, Clone)]
 pub struct WalletClient {
@@ -25,8 +25,10 @@ impl WalletClient {
         Ok(())
     }
 
-    pub async fn send_message<T: serde::Serialize>(&mut self, message: comms::Message<T>) -> Result<(), Box<dyn Error>> {
-
+    pub async fn send_message<T: serde::Serialize>(
+        &mut self,
+        message: comms::Message<T>,
+    ) -> Result<(), Box<dyn Error>> {
         let ws = self
             .ws
             .as_ref()
@@ -36,9 +38,12 @@ impl WalletClient {
             .ok_or("Websocket not connected")?;
 
         let serialized = serde_json::to_string(&message)?;
-        let mut ws_stream = ws.ws_stream.lock().await;
-        // Send the message
-        ws_stream.send(Message::Text(serialized)).await?;
+
+        {
+            let mut ws_stream = ws.ws_stream.lock().await;
+            // Send the message
+            ws_stream.send(Message::Text(serialized)).await?;
+        }
 
         Ok(())
     }

@@ -114,12 +114,7 @@ impl Wallet {
             self.private_key.clone(),
         );
 
-        // TODO: Broadcast the transaction to the network
         println!("Created transaction: {:?}", tx);
-        // let message = SubscriptionMessage {
-        //     action: "subscribe".to_string(),
-        //     topic: SubscriptionTopic::InitiateTransaction
-        // };
 
         let message = Message::Request {
             id: uuid::Uuid::new_v4().to_string(),
