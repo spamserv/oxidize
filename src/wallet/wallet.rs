@@ -2,7 +2,6 @@
 //! - wallet creation
 //! - account creation
 //! - address generation and validation
-
 use std::error::Error;
 
 use bip39::{Language, Mnemonic};
@@ -12,7 +11,13 @@ use hdwallet::{
     ExtendedPrivKey, ExtendedPubKey,
 };
 
-use crate::{transaction::{TransactionInput, TransactionManager, TransactionOutput}, websockets::{SubscriptionMessage, SubscriptionTopic}};
+use anyhow::{Result};
+
+use crate::{
+    comms::{EventTopic, Message, RequestType},
+    transaction::{TransactionInput, TransactionManager, TransactionOutput},
+    websockets::{SubscriptionMessage, SubscriptionTopic},
+};
 
 use super::{Account, WalletClient};
 
@@ -36,7 +41,7 @@ impl Wallet {
         let (public_key, private_key) = Wallet::generate_key_pair().unwrap();
         let id = "".to_string();
         let ws = WalletClient::new(ws_uri.to_string());
-        
+
         // Lets wait for the full blockchain init before sending messages.
         // ws.send_message(NodeMessageType::Balance { balance: 24 }).await?;
 
@@ -55,23 +60,32 @@ impl Wallet {
         self.ws.connect().await?;
 
         // Subscribe to WalletBalance changes
-        let message = SubscriptionMessage {
-            action: "subscribe".to_string(),
-            topic: SubscriptionTopic::WalletBalance
-        };
+        // let message = SubscriptionMessage {
+        //     action: "subscribe".to_string(),
+        //     topic: SubscriptionTopic::WalletBalance,
+        // };
+
+        let message = Message::Event { id: uuid::Uuid::new_v4().to_string(), topic: EventTopic::BlockchainPing, data: () };
 
         self.ws.send_message(message).await?;
 
-        self.ws.start_receiving(|message| {
-            println!("Received message: {}", message);
-        }).await?;
-        
+        self.ws
+            .start_receiving(|message| {
+                println!("Received message: {}", message);
+            })
+            .await?;
+
         Ok(())
     }
 
     /// Initiate payment by creating a transaction from the UTXOs and broadcasting it to the network
     /// Note: This function does not yet handle UTXO selection, fees, or change addresses
-    pub fn initiate_payment(&mut self, account_name: &str, recipient_addr: &str, amount: u64) -> Result<(), String> {
+    pub async fn initiate_payment(
+        &mut self,
+        account_name: &str,
+        recipient_addr: &str,
+        amount: u64,
+    ) -> Result<(), Box<dyn Error>> {
         let account = self.find_account(account_name)?;
 
         let previous_tx_hash = account
@@ -82,7 +96,7 @@ impl Wallet {
 
         let tx_input = TransactionInput {
             previous_tx_hash, // Placeholder, should be set to actual previous transaction hash
-            index: 0, // Placeholder, should be set to actual index
+            index: 0,         // Placeholder, should be set to actual index
             signature: String::from("PLACEHOLDER_SIGNATURE"), // Placeholder, should be set to actual signature
             public_key: self.public_key.clone(),
             amount,
@@ -102,21 +116,27 @@ impl Wallet {
 
         // TODO: Broadcast the transaction to the network
         println!("Created transaction: {:?}", tx);
-        let message = SubscriptionMessage {
-            action: "subscribe".to_string(),
-            topic: SubscriptionTopic::InitiateTransaction
+        // let message = SubscriptionMessage {
+        //     action: "subscribe".to_string(),
+        //     topic: SubscriptionTopic::InitiateTransaction
+        // };
+
+        let message = Message::Request {
+            id: uuid::Uuid::new_v4().to_string(),
+            r#type: RequestType::SubmitTransaction,
+            payload: tx,
         };
-        self.ws.send_message(message)
+
+        self.ws.send_message(message).await?;
 
         Ok(())
     }
 
-    pub fn find_account(&self, name: &str) -> Result<Account, String>{
+    pub fn find_account(&self, name: &str) -> Result<Account, String> {
         let result = self.accounts.iter().find(|acc| acc.name() == name);
         match result {
             Some(account) => Ok(account.clone()),
             _ => Err(format!("Account with name {} not found", name)),
-            
         }
     }
 

@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
 use crate::{
-    wallet::{MessagePayload, WalletMessage, WalletMessageDirection, WalletMessagePayload},
+    comms,
     websockets::{SubscriptionManager, SubscriptionMessage, SubscriptionTopic, WebSocketServer},
 };
 use anyhow::{Error, Result};
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use tokio::sync::Mutex;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -40,70 +41,47 @@ impl BlockchainListener {
                 let self_ref = Arc::clone(&self_ref);
                 Box::pin(async move {
                     println!("Message from client {}: {}", client_id, message);
-                    // Add custom blockchain-related message handling logic here
-                    match serde_json::from_str::<SubscriptionMessage>(&message) {
-                        Ok(subscription_message) => match subscription_message.topic {
-                            SubscriptionTopic::Transactions => {
-                                println!("Client {} subscribed to Transactions", client_id);
-                                let self_locked = self_ref.lock().await;
-                                self_locked
-                                    .subscription_manager
-                                    .subscribe(client_id, SubscriptionTopic::Transactions)
-                                    .await;
-                            }
-                            SubscriptionTopic::WalletBalance => {
-                                println!("Client {} subscribed to Wallet Balance", client_id);
-                                let self_locked = self_ref.lock().await;
-                                self_locked
-                                    .subscription_manager
-                                    .subscribe(client_id, SubscriptionTopic::WalletBalance)
-                                    .await;
-
-                                let payload = MessagePayload::Balance { balance: 65 };
-                                let message = WalletMessage::new(
-                                    "request_id".to_string(),
-                                    "account_id".to_string(),
-                                    WalletMessageDirection::ServerToClient,
-                                    payload,
-                                );
-
-                                match self_locked.send(client_id, message).await {
-                                    Err(_) => println!(
-                                        "{} {}",
-                                        "Message not sent successfully to".red(),
-                                        client_id.to_string().red()
-                                    ),
-                                    Ok(_) => {}
-                                };
-
-                                // Send immediatelly message about balance to that user
-                                //let _ = this.broadcast_to_topic(SubscriptionTopic::WalletBalance, message).await;
-                            }
-                            SubscriptionTopic::BlockchainStatus => {
-                                println!("Client {} subscribed to Blockchain Status", client_id);
-                                let self_locked = self_ref.lock().await;
-                                self_locked
-                                    .subscription_manager
-                                    .subscribe(
-                                        client_id.clone(),
-                                        SubscriptionTopic::BlockchainStatus,
-                                    )
-                                    .await;
-                            },
-                            SubscriptionTopic::InitiateTransaction => {
-                                println!("Client {} initiated a transaction", client_id);
-                                let self_locked = self_ref.lock().await;
-                                self_locked
-                                    .subscription_manager
-                                    .subscribe(
-                                        client_id.clone(),
-                                        SubscriptionTopic::InitiateTransaction,
-                                    )
-                                    .await;
-                            },
-                        },
+                    let raw_message: comms::Message<Value> = match serde_json::from_str(&message) {
+                        Ok(msg) => msg,
                         Err(e) => {
-                            eprintln!("Failed to parse subscription message: {}", e);
+                            eprintln!("Failed to parse message from client {}: {}", client_id, e);
+                            return;
+                        }
+                    };
+                    // Add custom blockchain-related message handling logic here
+                    match &raw_message {
+                        comms::Message::Request {
+                            id,
+                            r#type,
+                            payload,
+                        } => {
+                            println!(
+                                "Received request: id={}, type={:?}, payload={:?}",
+                                id, r#type, payload
+                            );
+                        }
+                        comms::Message::Response {
+                            id,
+                            status,
+                            data,
+                            error,
+                        } => {
+                            println!(
+                                "Received response: id={}, status={:?}, data={:?}, error={:?}",
+                                id, status, data, error
+                            );
+                        }
+                        comms::Message::Event { id, topic, data } => {
+                            println!(
+                                "Received event: id={}, topic={:?}, data={:?}",
+                                id, topic, data
+                            );
+                            let self_locked = self_ref.lock().await;
+
+                            self_locked
+                                .subscription_manager
+                                .subscribe(client_id.clone(), topic.clone())
+                                .await;
                         }
                     }
                 })
@@ -111,9 +89,9 @@ impl BlockchainListener {
             .await;
     }
 
-    pub async fn send<T>(&self, client_id: usize, message: WalletMessage<T>) -> Result<(), Error>
+    pub async fn send<T>(&self, client_id: usize, message: comms::Message<T>) -> Result<(), Error>
     where
-        T: WalletMessagePayload,
+        T: serde::Serialize,
     {
         let serialized_message = serde_json::to_string(&message)?;
         self.server.send(client_id, serialized_message).await;
@@ -123,4 +101,5 @@ impl BlockchainListener {
     pub async fn broadcast(&self, message: String) {
         self.server.broadcast(message).await;
     }
+
 }
