@@ -6,5 +6,5 @@ pub const BLOCKCHAIN_COINBASE_BLOCK_FEE: u64 = 20;
 pub const BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE: u64 = 1_000;
 pub const BLOCKCHAIN_TRANSACTION_FEE: u8 = 1;
 
-pub const WEBSOCKET_URI: &str = "127.0.0.1:8080";
+pub const WEBSOCKET_URI: &str = "localhost:8080";
 

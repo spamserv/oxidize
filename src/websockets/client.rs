@@ -1,38 +1,59 @@
-use std::{error::Error, sync::Arc};
+use std::{error::Error};
 
 use colored::Colorize;
-use tokio::{
-    net::TcpStream,
-    sync::Mutex,
-};
-use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
+use futures_util::{SinkExt, StreamExt};
+use tokio::sync::mpsc;
+use tokio_tungstenite::{connect_async, tungstenite::Message};
 
+use crate::comms;
 
 #[derive(Debug, Clone)]
 pub struct WebSocketClient {
-    pub ws_stream: Arc<Mutex<WebSocketStream<MaybeTlsStream<TcpStream>>>>,
+    sender: mpsc::Sender<String>,
 }
 
 impl WebSocketClient {
-    pub async fn new(address: String) -> Result<Self, Box<dyn Error>> {
+    pub async fn connect<F>(address: String, receiver_handler: F) -> Result<Self, Box<dyn Error>>
+    where
+        F: Fn(String) -> () + Send + Sync + 'static + Clone,
+    {
         let url_string = format!("ws://{address}");
 
         // Connect to the WebSocket server
         let (ws_stream, _) = connect_async(url_string).await?;
         println!("{}", "[Client] Connected to the server".blue());
 
-        // // Subscribe to WalletBalance changes
-        // let message = SubscriptionMessage {
-        //     action: "subscribe".to_string(),
-        //     topic: SubscriptionTopic::WalletBalance
-        // };
+        let (mut write, mut read) = ws_stream.split();
+        let (tx, mut rx) = mpsc::channel::<String>(32);
 
-        // let serialized_message = serde_json::to_string(&message)?;
+        // Spawn a task to process received messages using the handler
+        tokio::spawn(async move {
+            while let Some(message) = read.next().await {
+                if let Ok(Message::Text(message)) = message {
+                    receiver_handler(message);
+                }
+            }
+        });
 
-        // ws_stream.send(Message::Text(serialized_message)).await?;
+        // Writer
+        tokio::spawn(async move {
+            while let Some(message) = rx.recv().await {
+                if let Err(e) = write.send(Message::Text(message)).await {
+                    eprintln!("Send error: {:?}", e);
+                    break;
+                }
+            }
+        });
 
-        Ok(Self {
-            ws_stream: Arc::new(Mutex::new(ws_stream)),
-        })
+        Ok(Self { sender: tx })
+    }
+
+    pub async fn send_message<T: serde::Serialize>(
+        &mut self,
+        message: comms::Message<T>,
+    ) -> Result<(), Box<dyn Error>> {
+        let serialized = serde_json::to_string(&message)?;
+        let _ = self.sender.send(serialized).await?;
+        Ok(())
     }
 }

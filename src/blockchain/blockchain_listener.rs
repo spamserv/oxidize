@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{
     comms,
-    websockets::{SubscriptionManager, SubscriptionMessage, SubscriptionTopic, WebSocketServer},
+    websockets::{SubscriptionManager, WebSocketServer},
 };
 use anyhow::{Error, Result};
 use colored::Colorize;

@@ -11,12 +11,11 @@ use hdwallet::{
     ExtendedPrivKey, ExtendedPubKey,
 };
 
-use anyhow::{Result};
+use anyhow::Result;
 
 use crate::{
-    comms::{EventTopic, Message, RequestType},
+    comms::{Message, RequestType},
     transaction::{TransactionInput, TransactionManager, TransactionOutput},
-    websockets::{SubscriptionMessage, SubscriptionTopic},
 };
 
 use super::{Account, WalletClient};
@@ -35,12 +34,16 @@ pub struct Wallet {
 
 impl Wallet {
     /// Creates new wallet & generates key pair
-    pub fn new(name: String, ws_uri: String) -> Self {
+    pub async fn new(name: String, ws_uri: String) -> Self {
         let created_at = Utc::now().to_rfc3339();
         let accounts = vec![];
         let (public_key, private_key) = Wallet::generate_key_pair().unwrap();
         let id = "".to_string();
-        let ws = WalletClient::new(ws_uri.to_string());
+        let ws = WalletClient::connect(ws_uri.to_string(), |message| {
+            println!("Received message: {}", message);
+        })
+        .await
+        .expect("Cannot connect to the Blockchain Node");
 
         // Lets wait for the full blockchain init before sending messages.
         // ws.send_message(NodeMessageType::Balance { balance: 24 }).await?;
@@ -56,27 +59,6 @@ impl Wallet {
         }
     }
 
-    pub async fn connect(&mut self) -> Result<(), Box<dyn Error>> {
-        self.ws.connect().await?;
-
-        // Subscribe to WalletBalance changes
-        // let message = SubscriptionMessage {
-        //     action: "subscribe".to_string(),
-        //     topic: SubscriptionTopic::WalletBalance,
-        // };
-
-        let message = Message::Event { id: uuid::Uuid::new_v4().to_string(), topic: EventTopic::BlockchainPing, data: () };
-
-        self.ws.send_message(message).await?;
-
-        self.ws
-            .start_receiving(|message| {
-                println!("Received message: {}", message);
-            })
-            .await?;
-
-        Ok(())
-    }
 
     /// Initiate payment by creating a transaction from the UTXOs and broadcasting it to the network
     /// Note: This function does not yet handle UTXO selection, fees, or change addresses

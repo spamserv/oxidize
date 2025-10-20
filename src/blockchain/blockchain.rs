@@ -30,7 +30,7 @@ pub struct Blockchain {
     utxo: HashMap<String, Vec<TransactionOutput>>, // Unspent transaction outputs used for inputs into other transactions
     ledger: Vec<Transaction>, // The blockchain ledger keeps track of every transaction and the issuance of new coins through coinbase transactions.
     config: Arc<BlockchainConfig>,
-    wallet: Arc<Mutex<Wallet>>,
+    wallet: Wallet,
     pub listener: Arc<Mutex<BlockchainListener>>,
 }
 
@@ -72,11 +72,6 @@ impl Blockchain {
     /// Builds a blockchain from scratch
     /// Creates genesis block based on the BLOCKCHAIN_INITIAL_DIFFICULTY
     pub async fn build(config: BlockchainConfig) -> Result<Self, Box<dyn Error>> {
-        let wallet = Arc::new(Mutex::new(Wallet::new(
-            "MiningFeeWallet#1".to_string(),
-            config.addr.to_string(),
-        )));
-
         let config = Arc::new(config);
         let config_clone = Arc::clone(&config);
 
@@ -88,18 +83,17 @@ impl Blockchain {
             listener_clone.lock().await.run(&config_clone.addr).await;
         });
 
-        let mut wallet_mutex = wallet.lock().await;
-        wallet_mutex.connect().await?;
-        wallet_mutex.create_new_account("BlockchainNodeWalletAccount");
+        let mut wallet =
+            Wallet::new("MiningFeeWallet#1".to_string(), config.addr.to_string()).await;
+
+        wallet.create_new_account("BlockchainNodeWalletAccount");
 
         let coinbase_account: &Account;
         let coinbase_transaction: Transaction;
 
         // Scoped lock for mutex
         {
-            let wallet_lock = wallet_mutex;
-
-            coinbase_account = wallet_lock
+            coinbase_account = wallet
                 .accounts()
                 .first()
                 .expect("No coinbase error available.");
@@ -107,8 +101,8 @@ impl Blockchain {
             let coinbase_address = coinbase_account.address();
 
             coinbase_transaction = TransactionManager::create_coinbase_transaction(
-                wallet_lock.private_key(),
-                wallet_lock.public_key(),
+                wallet.private_key(),
+                wallet.public_key(),
                 coinbase_address,
                 BLOCKCHAIN_COINBASE_GENESIS_BLOCK_FEE,
                 coinbase_account.next_nonce(),
@@ -150,21 +144,19 @@ impl Blockchain {
         let coinbase_account: &Account;
         let coinbase_transaction: Transaction;
 
-        {
-            let wallet_lock = self.wallet.lock().await;
-            coinbase_account = wallet_lock
-                .accounts()
-                .first()
-                .expect("No coinbase error available.");
-            let coinbase_address = coinbase_account.address();
-            coinbase_transaction = TransactionManager::create_coinbase_transaction(
-                wallet_lock.private_key(),
-                wallet_lock.public_key(),
-                coinbase_address,
-                BLOCKCHAIN_COINBASE_BLOCK_FEE,
-                coinbase_account.next_nonce(),
-            );
-        }
+        coinbase_account = self
+            .wallet
+            .accounts()
+            .first()
+            .expect("No coinbase error available.");
+        let coinbase_address = coinbase_account.address();
+        coinbase_transaction = TransactionManager::create_coinbase_transaction(
+            self.wallet.private_key(),
+            self.wallet.public_key(),
+            coinbase_address,
+            BLOCKCHAIN_COINBASE_BLOCK_FEE,
+            coinbase_account.next_nonce(),
+        );
 
         // Get all transactions for the block
         let transactions = vec![coinbase_transaction];
@@ -258,7 +250,6 @@ impl Blockchain {
         let (from_index, to_index) = match self.find_hash_indices(from_hash, to_hash) {
             Some((from_index, to_index)) => (from_index, to_index),
             _ => return Err(BlockValidationError::RangeIndexFault),
-            
         };
 
         if self.blocks.len() <= 1 {

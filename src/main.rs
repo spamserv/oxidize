@@ -11,7 +11,6 @@ const NUMBER_OF_BLOCKS: u16 = 4;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    println!("Hello, world!");
 
     let config = BlockchainConfig::new(false);
 
@@ -63,14 +62,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     println!("{}", "Creating 2 wallets".bold());
-    let mut wallet1 = Wallet::new("Wallet#1".to_string(), WEBSOCKET_URI.to_string());
-    wallet1.connect().await?;
+    let mut wallet1 = Wallet::new("Wallet#1".to_string(), WEBSOCKET_URI.to_string()).await;
     wallet1.create_new_account("MainAccount");
     wallet1.create_new_account("SecondAccount");
 
-    let mut wallet2 = Wallet::new("Wallet#2".to_string(), WEBSOCKET_URI.to_string());
-
-    wallet2.connect().await?;
+    let mut wallet2 = Wallet::new("Wallet#2".to_string(), WEBSOCKET_URI.to_string()).await;
     wallet2.create_new_account("MiceAccount");
     wallet2.create_new_account("CheeseAccount");
     let wallet2_account = wallet2.find_account("MiceAccount")?.address().to_string();
