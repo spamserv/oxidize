@@ -2,30 +2,30 @@ use std::error::Error;
 
 use colored::Colorize;
 use oxidize::{
-    blockchain::{Blockchain, BlockchainConfig},
-    config::WEBSOCKET_URI,
-    wallet::Wallet,
+    blockchain::{Blockchain, BlockchainConfig}, config::WEBSOCKET_URI, logger::init_logging, wallet::Wallet
 };
+use tracing::info;
 
 const NUMBER_OF_BLOCKS: u16 = 4;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-
+    let _guard = init_logging();
+    
     let config = BlockchainConfig::new(false);
 
     let mut node = Blockchain::build(config)
         .await
         .expect("Cannot create blockchain.");
-    println!(
+    info!(
         "{}",
         "Initiated blockchain, with genesis block".bold().green()
     );
-    dbg!(node.config());
+    info!("{:?}", node.config());
 
     // let ws_port = node.config().
 
-    println!("Creating {} blocks", NUMBER_OF_BLOCKS);
+    info!("Creating {} blocks", NUMBER_OF_BLOCKS);
     for _ in 1..=NUMBER_OF_BLOCKS {
         node.add_block().await;
     }
@@ -35,25 +35,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let block_2 = blocks.get(3).unwrap().clone();
 
     match node.validate_single_block(block_1.header().current_hash()) {
-        Err(e) => println!(
+        Err(e) => info!(
             "Error on validating the block {} with error {}",
             block_1.header().current_hash(),
             e
         ),
-        Ok(_) => println!("{}", "Block validated".bold().green()),
+        Ok(_) => info!("{}", "Block validated".bold().green()),
     }
 
     match node.validate_full_chain() {
-        Err(e) => println!("Error validating full chain with error {}", e),
-        Ok(_) => println!("{}", "Full chain validated".bold().green()),
+        Err(e) => info!("Error validating full chain with error {}", e),
+        Ok(_) => info!("{}", "Full chain validated".bold().green()),
     }
 
     match node.validate_range_chain(
         block_1.header().current_hash(),
         block_2.header().current_hash(),
     ) {
-        Err(e) => println!("Error validating chain range with error {}", e),
-        Ok(_) => println!(
+        Err(e) => info!("Error validating chain range with error {}", e),
+        Ok(_) => info!(
             "{} from: {} to {}",
             "Chain range validated".bold().green(),
             block_1.header().current_hash().yellow(),
@@ -61,7 +61,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ),
     }
 
-    println!("{}", "Creating 2 wallets".bold());
+    info!("{}", "Creating 2 wallets".bold());
     let mut wallet1 = Wallet::new("Wallet#1".to_string(), WEBSOCKET_URI.to_string()).await;
     wallet1.create_new_account("MainAccount");
     wallet1.create_new_account("SecondAccount");

@@ -6,6 +6,7 @@
 
 // Imports
 use colored::Colorize;
+use tracing::info;
 use std::error::Error;
 use std::sync::Arc;
 use std::{collections::HashMap, vec};
@@ -184,7 +185,7 @@ impl Blockchain {
         }
 
         if !HashHelper::is_valid_hash(block) {
-            println!("Block hash: {}", block.header.current_hash);
+            info!("Block hash: {}", block.header.current_hash);
             return Err(BlockValidationError::InvalidHash);
         }
 
@@ -214,7 +215,7 @@ impl Blockchain {
 
         for (idx, block) in self.blocks.iter().enumerate() {
             if !HashHelper::is_valid_hash(block) {
-                println!(
+                info!(
                     "Failed on idx: {}, block hash: {}",
                     idx, block.header.current_hash
                 );
@@ -263,7 +264,7 @@ impl Blockchain {
                 .ok_or(BlockValidationError::BlockNotFound)?;
 
             if !HashHelper::is_valid_hash(block) {
-                println!(
+                info!(
                     "Failed on idx: {}, block hash: {}",
                     idx, block.header.current_hash
                 );

@@ -9,6 +9,7 @@ use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::sync::Mutex;
+use tracing::{error, info};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum BlockchainWebsocketMessage {
@@ -40,11 +41,11 @@ impl BlockchainListener {
             .run(addr, move |message, client_id, _clients| {
                 let self_ref = Arc::clone(&self_ref);
                 Box::pin(async move {
-                    println!("Message from client {}: {}", client_id, message);
+                    info!("Message from client {}: {}", client_id, message);
                     let raw_message: comms::Message<Value> = match serde_json::from_str(&message) {
                         Ok(msg) => msg,
                         Err(e) => {
-                            eprintln!("Failed to parse message from client {}: {}", client_id, e);
+                            error!("Failed to parse message from client {}: {}", client_id, e);
                             return;
                         }
                     };
@@ -55,7 +56,7 @@ impl BlockchainListener {
                             r#type,
                             payload,
                         } => {
-                            println!(
+                            info!(
                                 "Received request: id={}, type={:?}, payload={:?}",
                                 id, r#type, payload
                             );
@@ -66,13 +67,13 @@ impl BlockchainListener {
                             data,
                             error,
                         } => {
-                            println!(
+                            info!(
                                 "Received response: id={}, status={:?}, data={:?}, error={:?}",
                                 id, status, data, error
                             );
                         }
                         comms::Message::Event { id, topic, data } => {
-                            println!(
+                            info!(
                                 "Received event: id={}, topic={:?}, data={:?}",
                                 id, topic, data
                             );

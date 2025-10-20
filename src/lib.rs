@@ -5,3 +5,4 @@ pub mod wallet;
 pub mod transaction;
 pub mod websockets;
 pub mod comms;
+pub mod logger;

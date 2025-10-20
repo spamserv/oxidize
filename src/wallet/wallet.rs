@@ -12,6 +12,7 @@ use hdwallet::{
 };
 
 use anyhow::Result;
+use tracing::info;
 
 use crate::{
     comms::{Message, RequestType},
@@ -40,7 +41,7 @@ impl Wallet {
         let (public_key, private_key) = Wallet::generate_key_pair().unwrap();
         let id = "".to_string();
         let mut ws = WalletClient::connect(ws_uri.to_string(), |message| {
-            println!("Received message: {}", message);
+            info!("Received message: {}", message);
         })
         .await
         .expect("Cannot connect to the Blockchain Node");
@@ -98,7 +99,7 @@ impl Wallet {
             self.private_key.clone(),
         );
 
-        println!("Created transaction: {:?}", tx);
+        info!("Created transaction: {:?}", tx);
 
         let message = Message::Request {
             id: uuid::Uuid::new_v4().to_string(),

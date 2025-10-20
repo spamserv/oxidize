@@ -1,4 +1,5 @@
 use futures_util::{SinkExt, StreamExt};
+use tracing::info;
 use std::collections::HashMap;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -56,7 +57,7 @@ impl WebSocketServer {
             tokio::spawn(async move {
                 while let Some(msg) = ws_rx.next().await {
                     if let Ok(Message::Text(text)) = msg {
-                        println!("New message: {:?}", text);
+                        info!("New message: {:?}", text);
                         // Execute the provided closure to handle the message
                         Box::pin(handle_message_clone(text, client_id, clients.clone())).await;
                     }
