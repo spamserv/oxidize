@@ -5,7 +5,6 @@ use crate::{
     websockets::{SubscriptionManager, WebSocketServer},
 };
 use anyhow::{Error, Result};
-use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::sync::Mutex;

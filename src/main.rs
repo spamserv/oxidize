@@ -1,6 +1,5 @@
 use std::error::Error;
 
-use colored::Colorize;
 use oxidize::{
     blockchain::{Blockchain, BlockchainConfig}, config::WEBSOCKET_URI, logger::init_logging, wallet::Wallet
 };
@@ -19,7 +18,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .expect("Cannot create blockchain.");
     info!(
         "{}",
-        "Initiated blockchain, with genesis block".bold().green()
+        "Initiated blockchain, with genesis block"
     );
     info!("{:?}", node.config());
 
@@ -40,12 +39,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
             block_1.header().current_hash(),
             e
         ),
-        Ok(_) => info!("{}", "Block validated".bold().green()),
+        Ok(_) => info!("{}", "Block validated"),
     }
 
     match node.validate_full_chain() {
         Err(e) => info!("Error validating full chain with error {}", e),
-        Ok(_) => info!("{}", "Full chain validated".bold().green()),
+        Ok(_) => info!("{}", "Full chain validated"),
     }
 
     match node.validate_range_chain(
@@ -55,13 +54,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Err(e) => info!("Error validating chain range with error {}", e),
         Ok(_) => info!(
             "{} from: {} to {}",
-            "Chain range validated".bold().green(),
-            block_1.header().current_hash().yellow(),
-            block_2.header().current_hash().yellow()
+            "Chain range validated",
+            block_1.header().current_hash(),
+            block_2.header().current_hash()
         ),
     }
 
-    info!("{}", "Creating 2 wallets".bold());
+    info!("{}", "Creating 2 wallets");
     let mut wallet1 = Wallet::new("Wallet#1".to_string(), WEBSOCKET_URI.to_string()).await;
     wallet1.create_new_account("MainAccount");
     wallet1.create_new_account("SecondAccount");

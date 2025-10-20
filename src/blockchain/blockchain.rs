@@ -5,7 +5,6 @@
 //!
 
 // Imports
-use colored::Colorize;
 use tracing::info;
 use std::error::Error;
 use std::sync::Arc;
@@ -323,8 +322,6 @@ impl Blockchain {
                 panic!(
                     "{}",
                     "No (coinbase) Transactions in the Transactions vector of a Block."
-                        .red()
-                        .to_string()
                 )
             })
             .clone();
@@ -336,8 +333,6 @@ impl Blockchain {
                 panic!(
                     "{}",
                     "No (coinbase) TransactionOutput in the TransactionOutputs vector."
-                        .red()
-                        .to_string()
                 )
             })
             .clone();

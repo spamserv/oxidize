@@ -1,4 +1,3 @@
-use tracing::{span, Level, Span};
 use tracing_appender::rolling;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
 

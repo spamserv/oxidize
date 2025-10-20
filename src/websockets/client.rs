@@ -1,6 +1,5 @@
 use std::{error::Error};
 
-use colored::Colorize;
 use futures_util::{SinkExt, StreamExt};
 use tokio::sync::mpsc;
 use tokio_tungstenite::{connect_async, tungstenite::Message};
@@ -22,7 +21,7 @@ impl WebSocketClient {
 
         // Connect to the WebSocket server
         let (ws_stream, _) = connect_async(url_string).await?;
-        info!("{}", "[Client] Connected to the server".blue());
+        info!("{}", "[Client] Connected to the server");
 
         let (mut write, mut read) = ws_stream.split();
         let (tx, mut rx) = mpsc::channel::<String>(32);
