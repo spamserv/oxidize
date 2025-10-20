@@ -72,9 +72,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let wallet2_account = wallet2.find_account("MiceAccount")?.address().to_string();
     
     wallet1.initiate_payment("MainAccount", &wallet2_account, 5).await?;
-    // wallet1.initiate_payment("CheeseAccount", &wallet2_account, 25).await?;
-    // wallet1.initiate_payment("CheeseAccount", &wallet2_account, 15).await?;
-
+    wallet1.initiate_payment("SecondAccount", &wallet2_account, 25).await?;
+    wallet1.initiate_payment("SecondAccount", &wallet2_account, 15).await?;
     // dbg!(node);
     // dbg!(
     //     wallet1.id,

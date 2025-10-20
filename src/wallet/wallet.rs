@@ -39,11 +39,13 @@ impl Wallet {
         let accounts = vec![];
         let (public_key, private_key) = Wallet::generate_key_pair().unwrap();
         let id = "".to_string();
-        let ws = WalletClient::connect(ws_uri.to_string(), |message| {
+        let mut ws = WalletClient::connect(ws_uri.to_string(), |message| {
             println!("Received message: {}", message);
         })
         .await
         .expect("Cannot connect to the Blockchain Node");
+
+        ws.ping().await.expect("Cannot send ping message");
 
         // Lets wait for the full blockchain init before sending messages.
         // ws.send_message(NodeMessageType::Balance { balance: 24 }).await?;
