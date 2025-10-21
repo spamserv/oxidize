@@ -1,3 +1,6 @@
+//! Subscription Manager
+//! Tracks client subscriptions to topics and provides methods for managing subscriptions.
+
 use std::{collections::HashMap, sync::Arc};
 
 use tokio::sync::RwLock;

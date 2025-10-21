@@ -1,7 +1,15 @@
-//! This module handles:
-//! - wallet creation
-//! - account creation
-//! - address generation and validation
+//! # Wallet
+//!
+//! Provides core wallet functionality including keypair generation, account management,
+//! and initiating transactions on the blockchain network.
+//!
+//! ## Features
+//! - Generate wallet keypair (mnemonic-based, ECDSA)
+//! - Create and manage multiple accounts
+//! - Initiate and broadcast transactions via WebSocket
+//! - Account lookup by name
+//! 
+
 use std::error::Error;
 
 use bip39::{Language, Mnemonic};
@@ -21,7 +29,7 @@ use crate::{
 
 use super::{Account, WalletClient};
 
-/// Wallet struct, used for storing accounts and key pair
+/// Wallet struct managing accounts, keypair, and WebSocket client
 #[derive(Debug, Clone)]
 pub struct Wallet {
     pub id: String, // Derived from public key
@@ -30,11 +38,11 @@ pub struct Wallet {
     pub accounts: Vec<Account>,
     public_key: PublicKey,
     private_key: SecretKey,
-    ws: WalletClient, // Used for testing, idea is not to store it in the future
+    ws: WalletClient, // Currently stored for testing; future design may remove
 }
 
 impl Wallet {
-    /// Creates new wallet & generates key pair
+    /// Creates a new wallet with a generated keypair and WebSocket connection
     pub async fn new(name: String, ws_uri: String) -> Self {
         let created_at = Utc::now().to_rfc3339();
         let accounts = vec![];
@@ -64,7 +72,7 @@ impl Wallet {
 
 
     /// Initiate payment by creating a transaction from the UTXOs and broadcasting it to the network
-    /// Note: This function does not yet handle UTXO selection, fees, or change addresses
+    /// TODO: This function does not yet handle UTXO selection, fees, or change addresses
     pub async fn initiate_payment(
         &mut self,
         account_name: &str,
@@ -112,6 +120,7 @@ impl Wallet {
         Ok(())
     }
 
+    /// Finds an account by name
     pub fn find_account(&self, name: &str) -> Result<Account, String> {
         let result = self.accounts.iter().find(|acc| acc.name() == name);
         match result {
@@ -126,8 +135,7 @@ impl Wallet {
         self.accounts.push(account);
     }
 
-    /// Generates keypair for the Wallet (PublicKey, SecretKey)
-    /// Based on the mnemonic 24 word english
+    /// Generates wallet keypair from mnemonic (24 words, English)
     fn generate_key_pair() -> Result<(PublicKey, SecretKey), String> {
         // Generate a mnemonic and seed
         let mut rng = bip39::rand::thread_rng();
@@ -153,14 +161,17 @@ impl Wallet {
         Err("Cannot create master key from seed!".to_string())
     }
 
+    /// Returns references to wallet accounts
     pub fn accounts(&self) -> &Vec<Account> {
         &self.accounts
     }
 
+    /// Accessor for wallet public key
     pub fn public_key(&self) -> &PublicKey {
         &self.public_key
     }
 
+    /// Accessor for wallet private key
     pub fn private_key(&self) -> &SecretKey {
         &self.private_key
     }

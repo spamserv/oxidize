@@ -1,3 +1,7 @@
+//! WebSocket Server
+//! Manages multiple client connections, broadcasting, and message handling.
+//! 
+
 use futures_util::{SinkExt, StreamExt};
 use tracing::info;
 use std::collections::HashMap;
@@ -23,6 +27,7 @@ impl WebSocketServer {
         }
     }
 
+    /// Runs the server, accepts connections, and handles incoming messages
     pub async fn run<F>(&self, addr: &str, handle_message: F)
     where
         F: Fn(

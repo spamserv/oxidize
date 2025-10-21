@@ -1,3 +1,6 @@
+//! WebSocket Client
+//! Connects to a WebSocket server, handles incoming messages, and allows sending messages.
+
 use std::{error::Error};
 
 use futures_util::{SinkExt, StreamExt};
@@ -13,6 +16,7 @@ pub struct WebSocketClient {
 }
 
 impl WebSocketClient {
+     /// Connects to a WebSocket server and starts listening to messages
     pub async fn connect<F>(address: String, receiver_handler: F) -> Result<Self, Box<dyn Error>>
     where
         F: Fn(String) -> () + Send + Sync + 'static + Clone,
@@ -35,7 +39,7 @@ impl WebSocketClient {
             }
         });
 
-        // Writer
+        // Writer task to send messages to the server
         tokio::spawn(async move {
             while let Some(message) = rx.recv().await {
                 if let Err(e) = write.send(Message::Text(message)).await {

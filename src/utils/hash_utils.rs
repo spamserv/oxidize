@@ -1,5 +1,7 @@
-//! This module handles:
-//! - HashHelper functions to help with all hash related things, such as generating new hashes and validating block hashes
+//! # Hash Utils
+//!
+//! Provides helper functions for generating and validating SHA-256 hashes
+//! used in blocks and transactions.
 
 use sha2::{Digest, Sha256};
 

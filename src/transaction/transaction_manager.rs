@@ -1,8 +1,7 @@
-//! This module handles:
-//! - creating and signing the transaction
-//! - calculating transaction fee
-//! - building the transaction from scratch (inputs, outputs, validation)
+//! # Transaction Manager
 //!
+//! Handles transaction lifecycle: creation, signing, validation, and metadata tracking.
+//! Includes helpers for coinbase transactions and serialization for persistence.
 
 use bincode::{Decode, Encode};
 use chrono::Utc;
@@ -11,6 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::utils::TransactionHelper;
 
+/// A complete blockchain transaction containing inputs, outputs, and metadata.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
     inputs: Vec<TransactionInput>,
@@ -32,6 +32,7 @@ impl Transaction {
     }
 }
 
+/// References previous outputs and provides authorization for spending.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionInput {
     pub previous_tx_hash: [u8; 32], // Hash of the previous transaction
@@ -75,12 +76,14 @@ impl bincode::Encode for TransactionOutput {
     }
 }
 
+/// Represents the recipient and amount being transferred.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionOutput {
     pub recipient_address: String, // The address of the recipient
     pub amount: u64,               // The amount of currency being sent
 }
 
+/// Metadata attached to each transaction (hash, timestamp, status, etc.).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionMetadata {
     pub transaction_hash: [u8; 32],
@@ -90,6 +93,7 @@ pub struct TransactionMetadata {
     signature: Vec<u8>, // Store signature as bytes for serialization
 }
 
+/// Transaction lifecycle states.
 #[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
 pub enum TransactionStatus {
     Pending,
@@ -97,6 +101,8 @@ pub enum TransactionStatus {
     Rejected,
 }
 
+
+/// Type of transaction (coinbase, fee, or standard).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TransactionType {
     Coinbase, // For mining a new block, does not get put into UTXO
@@ -104,17 +110,16 @@ pub enum TransactionType {
     Regular,  // P2P
 }
 
+/// Errors related to transaction creation or validation.
 pub enum TransactionError {
     NotEnoughFunds,
 }
 
+/// Main struct for transaction creation and management.
 pub struct TransactionManager {}
 
-// struct TransactionBuilder {}
-
-// struct Signer {}
-
 impl TransactionManager {
+    /// Creates a signed transaction from inputs and outputs.
     pub fn create_transaction(
         inputs: Vec<TransactionInput>,
         outputs: Vec<TransactionOutput>,
@@ -191,30 +196,3 @@ impl TransactionManager {
         todo!()
     }
 }
-
-// impl TransactionBuilder {
-//     pub fn add_input(&mut self, tx_id: &str, index: u32, amount: u64) -> TransactionInput {
-//         // Add an input to the transaction
-//         todo!()
-//     }
-
-//     pub fn add_output(&mut self, recipient: &str, amount: u64) -> TransactionOutput {
-//         // Add an output to the transaction
-//         todo!()
-//     }
-
-//     pub fn create_change_output(&mut self, amount: u64) -> Result<(), String> {
-//         // Create a change output if the inputs exceed the transaction amount
-//         todo!()
-//     }
-
-//     pub fn validate(&self) -> Result<(), String> {
-//         // Validate the transaction, ensuring inputs and outputs match
-//         todo!()
-//     }
-
-//     pub fn calculate_fee(&self) -> u64 {
-//         // Calculate the fee based on the size and inputs/outputs
-//         todo!()
-//     }
-// }

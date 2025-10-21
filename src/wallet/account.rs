@@ -1,10 +1,15 @@
+//! # Account
+//!
+//! Represents a wallet account, including its address, balance, and transaction history.
+//!
+
 use chrono::Utc;
 use hdwallet::secp256k1::PublicKey;
 use sha2::{Digest, Sha256};
 
 use crate::transaction::Transaction;
 
-/// Account struct, used to store transaction history, address.
+/// Stores account data including address, balance, and transaction history.
 #[derive(Debug, Clone, Default)]
 pub struct Account {
     address: String,
@@ -15,7 +20,7 @@ pub struct Account {
 }
 
 impl Account {
-    /// Creates new account
+    /// Creates a new account from a public key and name.
     pub fn new(public_key: &PublicKey, name: &str) -> Self {
         let created_at = Utc::now().to_rfc3339();
         let address = Self::generate_address(public_key);
@@ -27,7 +32,7 @@ impl Account {
             name,
             created_at,
             balance: 0,
-            transaction_history
+            transaction_history,
         }
     }
 
@@ -41,6 +46,7 @@ impl Account {
         hash_result
     }
 
+    /// Returns the next nonce based on transaction history length.
     pub fn next_nonce(&self) -> u64 {
         self.transaction_history.len() as u64
     }
@@ -68,5 +74,4 @@ impl Account {
     pub fn created_at(&self) -> &String {
         &self.created_at
     }
-    
 }

@@ -1,3 +1,9 @@
+//! # WalletClient
+//!
+//! Provides a WebSocket client for interacting with the blockchain network,
+//! sending transactions, and receiving events.
+//! 
+
 use std::error::Error;
 
 use crate::{comms, websockets::WebSocketClient};
@@ -9,6 +15,7 @@ pub struct WalletClient {
 }
 
 impl WalletClient {
+    /// Connects to a blockchain node via WebSocket.
     pub async fn connect<F>(
         address: String,
         receiver_handler: F,
@@ -22,6 +29,7 @@ impl WalletClient {
         Ok(wc)
     }
 
+    /// Sends a custom message to the blockchain network.
     pub async fn send_message<T: serde::Serialize>(
         &mut self,
         message: comms::Message<T>,
@@ -32,6 +40,7 @@ impl WalletClient {
         Ok(())
     }
 
+    /// Sends a ping message to the blockchain node.
     pub async fn ping(&mut self) -> Result<(), Box<dyn Error>> {
         let message = comms::Message::Event {
             id: uuid::Uuid::new_v4().to_string(),

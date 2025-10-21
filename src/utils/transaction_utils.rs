@@ -1,11 +1,17 @@
+//! # Transaction Utils
+//!
+//! Provides tools for hashing, signing, and verifying transactions.
+//!
+
 use hdwallet::secp256k1::{ecdsa::Signature, Message, PublicKey, Secp256k1, SecretKey};
 use sha2::{Digest, Sha256};
 
 use crate::transaction::{TransactionInput, TransactionOutput, TransactionStatus};
+/// Transaction-related helper functions.
 pub struct TransactionHelper {}
 
 impl TransactionHelper {
-    // Transaction Hash
+    /// Generates a 32-byte transaction hash from inputs, outputs, timestamp, and status.
     pub fn generate_transaction_hash(
         inputs: &Vec<TransactionInput>,
         outputs: &Vec<TransactionOutput>,
@@ -30,7 +36,7 @@ impl TransactionHelper {
         hash_bytes
     }
 
-    /// Signs transaction using ECDSA with the given Wallet secret key
+    /// Signs transaction using ECDSA with the given Wallet secret/private key
     pub fn sign_transaction(secret_key: &SecretKey, tx_hash: [u8; 32]) -> Signature {
         let secp = Secp256k1::new();
         let msg = Message::from_slice(&tx_hash).unwrap();

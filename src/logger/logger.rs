@@ -1,3 +1,8 @@
+//! # Logging Initialization
+//!
+//! Sets up the global `tracing` subscriber with console and file output.
+//! Logs are rotated daily and formatted as JSON in `./logs/blockchain.log`.
+//! 
 use tracing_appender::rolling;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
 
